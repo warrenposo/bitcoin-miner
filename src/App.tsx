@@ -6,10 +6,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
-import Login from "./pages/Login";
+import Login from "./pages/Signin";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import Deposit from "./pages/Deposit";
+import Withdraw from "./pages/Withdraw";
+import StartMining from "./pages/StartMining";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +41,30 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/deposit"
+              element={
+                <ProtectedRoute>
+                  <Deposit />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/withdraw"
+              element={
+                <ProtectedRoute>
+                  <Withdraw />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/start-mining"
+              element={
+                <ProtectedRoute>
+                  <StartMining />
                 </ProtectedRoute>
               }
             />

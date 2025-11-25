@@ -223,10 +223,31 @@ const Dashboard = () => {
   };
 
   const menuItems = [
-    { label: 'Dashboard', icon: Home, active: true },
-    { label: 'Deposit', icon: Wallet },
-    { label: 'Withdraw', icon: CircleDollarSign },
-    { label: 'Start Mining', icon: Pickaxe },
+    { label: 'Dashboard', icon: Home, path: '/dashboard', active: true },
+    { 
+      label: 'Deposit', 
+      icon: Wallet, 
+      subItems: [
+        { label: 'Deposit Now', path: '/deposit', view: 'deposit' },
+        { label: 'Deposit Log', path: '/deposit', view: 'log' },
+      ]
+    },
+    { 
+      label: 'Withdraw', 
+      icon: CircleDollarSign, 
+      subItems: [
+        { label: 'Withdraw Now', path: '/withdraw', view: 'withdraw' },
+        { label: 'Withdraw Log', path: '/withdraw', view: 'log' },
+      ]
+    },
+    { 
+      label: 'Start Mining', 
+      icon: Pickaxe, 
+      subItems: [
+        { label: 'Buy Plan', path: '/start-mining', view: 'buy' },
+        { label: 'Purchased Plans', path: '/start-mining', view: 'purchased' },
+      ]
+    },
     { label: 'Referral', icon: Gift },
     { label: 'Support Ticket', icon: MessageSquare },
     { label: 'My Account', icon: User },
@@ -255,24 +276,67 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#0B1421] text-white">
-      <header className="border-b border-white/5 bg-[#0F1A2B]/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-[#f97316] px-2 py-1 text-sm font-bold">BTC</span>
-            <div className="text-xl font-semibold">BTCMining</div>
+      <div className="flex">
+        <aside className="w-64 min-h-screen bg-[#0F1A2B] border-r border-white/5 p-4">
+          <div className="space-y-2">
+            {menuItems.map((item) => (
+              <div key={item.label}>
+                {item.subItems ? (
+                  <div>
+                    <div className="flex items-center justify-between px-4 py-3 text-white/70 font-medium">
+                      <div className="flex items-center gap-3">
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </div>
+                    </div>
+                    <div className="ml-4 space-y-1">
+                      {item.subItems.map((subItem: any) => (
+                        <button
+                          key={subItem.label}
+                          onClick={() => {
+                            navigate(subItem.path);
+                            // If there's a view parameter, we'll handle it in the target page
+                            if (subItem.view) {
+                              // Store the view in sessionStorage so the target page knows which view to show
+                              sessionStorage.setItem(`${subItem.path}_view`, subItem.view);
+                            }
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition"
+                        >
+                          <ChevronRight className="h-4 w-4 text-white/40" />
+                          {subItem.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (item.path) {
+                        navigate(item.path);
+                      }
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition ${
+                      item.active 
+                        ? 'bg-yellow-500/20 text-yellow-400' 
+                        : 'text-white/70 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-white/40" />
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
-          <nav className="hidden gap-8 text-sm font-medium md:flex">
-            <button className="text-white/80 hover:text-white" onClick={handleHomeClick}>
-              Home
-            </button>
-            <button className="text-white/80 hover:text-white" onClick={handleTeamClick}>
-              Team
-            </button>
-            <button className="text-white/80 hover:text-white" onClick={handleAboutClick}>
-              AboutUs
-            </button>
-          </nav>
-          <div className="flex items-center gap-4">
+        </aside>
+
+        <main className="flex-1 p-6 space-y-6">
+          {/* Header with language and logout */}
+          <div className="flex items-center justify-end gap-4 mb-4">
             <select
               className="rounded-md bg-transparent px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10"
               value={language}
@@ -295,30 +359,7 @@ const Dashboard = () => {
               Logout
             </Button>
           </div>
-        </div>
-      </header>
 
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 lg:flex-row">
-        <aside className="w-full rounded-2xl border border-white/5 bg-[#0F1A2B]/80 p-6 lg:w-64">
-          <div className="space-y-4">
-            {menuItems.map((item) => (
-              <button
-                key={item.label}
-                className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-medium transition ${
-                  item.active ? 'bg-gradient-to-r from-yellow-500/20 to-transparent text-yellow-400' : 'text-white/70 hover:text-white'
-                }`}
-              >
-                <span className="flex items-center gap-3">
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </span>
-                <ChevronRight className="h-4 w-4 text-white/40" />
-              </button>
-            ))}
-          </div>
-        </aside>
-
-        <main className="flex-1 space-y-6">
           <section className="rounded-2xl border border-white/5 bg-[#111B2D]/70 p-6 text-sm leading-relaxed text-white/80">
             <h2 className="mb-3 text-lg font-semibold text-white">{copy.heroTitle}</h2>
             <p>{copy.heroBody1}</p>
@@ -352,7 +393,12 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 <p className="text-white/70">Start your Miner</p>
-                <Button className="w-fit bg-yellow-500 text-black hover:bg-yellow-400">Start Mining</Button>
+                <Button 
+                  className="w-fit bg-yellow-500 text-black hover:bg-yellow-400"
+                  onClick={() => navigate('/start-mining')}
+                >
+                  Start Mining
+                </Button>
               </CardContent>
             </Card>
           </section>
@@ -364,7 +410,12 @@ const Dashboard = () => {
                 <CardDescription className="text-white/60">Secure Coinbase gateway</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full bg-yellow-500 text-black hover:bg-yellow-400">{copy.depositCta}</Button>
+                <Button 
+                  className="w-full bg-yellow-500 text-black hover:bg-yellow-400"
+                  onClick={() => navigate('/deposit')}
+                >
+                  {copy.depositCta}
+                </Button>
               </CardContent>
             </Card>
             <Card className="border-white/5 bg-[#111B2D]/70">
@@ -373,7 +424,12 @@ const Dashboard = () => {
                 <CardDescription className="text-white/60">Request payouts seamlessly</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full bg-yellow-500 text-black hover:bg-yellow-400">{copy.withdrawCta}</Button>
+                <Button 
+                  className="w-full bg-yellow-500 text-black hover:bg-yellow-400"
+                  onClick={() => navigate('/withdraw')}
+                >
+                  {copy.withdrawCta}
+                </Button>
               </CardContent>
             </Card>
             <Card className="border-white/5 bg-[#111B2D]/70">
@@ -428,7 +484,11 @@ const Dashboard = () => {
             <div className="mt-8 rounded-xl border border-white/5 p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h4 className="text-lg font-semibold text-white">Active Miner</h4>
-                <Button variant="ghost" className="text-yellow-400">
+                <Button 
+                  variant="ghost" 
+                  className="text-yellow-400"
+                  onClick={() => navigate('/start-mining')}
+                >
                   Start Mining
                 </Button>
               </div>

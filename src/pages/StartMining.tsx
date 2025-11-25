@@ -1,0 +1,763 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Home,
+  Wallet,
+  ChevronRight,
+  Pickaxe,
+  Gift,
+  MessageSquare,
+  User,
+  CircleDollarSign,
+  ShoppingCart,
+  List,
+  LogOut,
+} from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+
+interface MiningPlan {
+  id: string;
+  name: string;
+  price: number;
+  duration: number;
+  hardware: string;
+  dailyMining: { btc?: number; ltc?: number; usd: number };
+  monthlyMining?: { btc?: number; ltc?: number; usd: number };
+  totalMining?: { btc?: number; ltc?: number; usd: number };
+  referralRewards?: number;
+  available: number;
+  sold: number;
+  currency: 'BTC' | 'LTC';
+}
+
+interface PurchasedPlan {
+  id: string;
+  sn: number;
+  planName: string;
+  price: number;
+  returnPerDay: { min: number; max: number; currency: string };
+  totalDays: number;
+  remainingDays: number;
+  status: 'pending' | 'active' | 'completed' | 'expired';
+  purchasedDate: string;
+  miner: string;
+  fixedReturn: number;
+}
+
+const StartMining = () => {
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  // Check if there's a view preference from navigation
+  const initialView = (sessionStorage.getItem('/start-mining_view') as 'buy' | 'purchased') || 'buy';
+  const [activeView, setActiveView] = useState<'buy' | 'purchased'>(initialView);
+  
+  // Clear the view preference after using it
+  useEffect(() => {
+    if (initialView) {
+      sessionStorage.removeItem('/start-mining_view');
+    }
+  }, []);
+  const [selectedCurrency, setSelectedCurrency] = useState<'BTC' | 'LTC'>('BTC');
+  const [btcPrice, setBtcPrice] = useState(109122.76);
+  const [ltcPrice, setLtcPrice] = useState(88.12);
+
+  // BTC Plans
+  const btcPlans: MiningPlan[] = [
+    {
+      id: 'promotions',
+      name: 'PROMOTIONS',
+      price: 50,
+      duration: 1,
+      hardware: 'Antminer S19',
+      totalMining: { btc: 0.00190, usd: 225.00 },
+      available: 4000,
+      sold: 652,
+      currency: 'BTC',
+    },
+    {
+      id: 'new-beginner',
+      name: 'NEW BEGINNER',
+      price: 70,
+      duration: 1,
+      hardware: 'Antminer S19',
+      totalMining: { btc: 0.001347, usd: 350.00 },
+      available: 4000,
+      sold: 652,
+      currency: 'BTC',
+    },
+    {
+      id: 'basic',
+      name: 'BASIC',
+      price: 200,
+      duration: 1,
+      hardware: 'Antminer S19',
+      totalMining: { btc: 0.008938, usd: 650.30 },
+      available: 4000,
+      sold: 452,
+      currency: 'BTC',
+    },
+    {
+      id: 'economy',
+      name: 'ECONOMY',
+      price: 400,
+      duration: 2,
+      hardware: 'Antminer S19',
+      totalMining: { btc: 0.030351, usd: 1200.00 },
+      referralRewards: 72.8,
+      available: 3000,
+      sold: 2154,
+      currency: 'BTC',
+    },
+    {
+      id: 'standart',
+      name: 'STANDART',
+      price: 2400,
+      duration: 365,
+      hardware: 'Antminer S19',
+      dailyMining: { btc: 0.003734, usd: 407.50 },
+      monthlyMining: { btc: 0.112030, usd: 12225.00 },
+      referralRewards: 240,
+      available: 2000,
+      sold: 1096,
+      currency: 'BTC',
+    },
+    {
+      id: 'senior',
+      name: 'SENIOR',
+      price: 6500,
+      duration: 365,
+      hardware: 'Antminer S19',
+      dailyMining: { btc: 0.015652, usd: 1708.00 },
+      monthlyMining: { btc: 0.469563, usd: 51240.00 },
+      referralRewards: 650,
+      available: 1000,
+      sold: 800,
+      currency: 'BTC',
+    },
+    {
+      id: 'advanced',
+      name: 'ADVANCED',
+      price: 12600,
+      duration: 365,
+      hardware: 'Antminer S19',
+      dailyMining: { btc: 0.042764, usd: 4666.50 },
+      monthlyMining: { btc: 1.282913, usd: 139995.00 },
+      referralRewards: 1260,
+      available: 800,
+      sold: 461,
+      currency: 'BTC',
+    },
+    {
+      id: 'luxurious',
+      name: 'LUXURIOUS',
+      price: 32000,
+      duration: 365,
+      hardware: 'Antminer S19',
+      dailyMining: { btc: 0.119498, usd: 13040.00 },
+      monthlyMining: { btc: 3.584953, usd: 391200.00 },
+      referralRewards: 3200,
+      available: 300,
+      sold: 177,
+      currency: 'BTC',
+    },
+    {
+      id: 'vip1',
+      name: 'Vip 1',
+      price: 72000,
+      duration: 365,
+      hardware: 'Antminer S19',
+      dailyMining: { btc: 0.445645, usd: 48630.00 },
+      monthlyMining: { btc: 13.3693, usd: 1458900.00 },
+      referralRewards: 7200,
+      available: 300,
+      sold: 174,
+      currency: 'BTC',
+    },
+    {
+      id: 'vip3',
+      name: 'VIP3',
+      price: 169800,
+      duration: 365,
+      hardware: 'Antminer S19',
+      dailyMining: { btc: 0.995393, usd: 108620.00 },
+      monthlyMining: { btc: 29.8618, usd: 3258600.00 },
+      referralRewards: 16980,
+      available: 300,
+      sold: 278,
+      currency: 'BTC',
+    },
+  ];
+
+  // LTC Plans
+  const ltcPlans: MiningPlan[] = [
+    {
+      id: 'activity-award',
+      name: 'Activity Award',
+      price: 200,
+      duration: 365,
+      hardware: 'Antminer L3+',
+      dailyMining: { ltc: 0.076033, usd: 6.70 },
+      monthlyMining: { ltc: 2.280997, usd: 201.00 },
+      available: 5000,
+      sold: 1977,
+      currency: 'LTC',
+    },
+    {
+      id: 'basic-ltc',
+      name: 'BASIC',
+      price: 1000,
+      duration: 365,
+      hardware: 'Antminer L3+',
+      dailyMining: { ltc: 0.465278, usd: 41.00 },
+      monthlyMining: { ltc: 13.958343, usd: 1230.00 },
+      available: 3000,
+      sold: 2817,
+      currency: 'LTC',
+    },
+    {
+      id: 'standart-ltc',
+      name: 'STANDART',
+      price: 3000,
+      duration: 365,
+      hardware: 'Antminer L3+',
+      dailyMining: { ltc: 2.360435, usd: 208.00 },
+      monthlyMining: { ltc: 70.813056, usd: 6240.00 },
+      available: 1000,
+      sold: 971,
+      currency: 'LTC',
+    },
+    {
+      id: 'luxurious-ltc',
+      name: 'LUXURIOUS',
+      price: 15000,
+      duration: 365,
+      hardware: 'Antminer L3+',
+      dailyMining: { ltc: 18.384159, usd: 1620.00 },
+      monthlyMining: { ltc: 551.524765, usd: 48600.00 },
+      available: 500,
+      sold: 470,
+      currency: 'LTC',
+    },
+  ];
+
+  const currentPlans = selectedCurrency === 'BTC' ? btcPlans : ltcPlans;
+  const currentPrice = selectedCurrency === 'BTC' ? btcPrice : ltcPrice;
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const handleBuyPlan = (plan: MiningPlan) => {
+    // TODO: Implement purchase logic
+    toast({
+      title: 'Plan Selected',
+      description: `You selected ${plan.name} plan for $${plan.price}`,
+    });
+  };
+
+  const menuItems = [
+    { label: 'Dashboard', icon: Home, path: '/dashboard' },
+    { label: 'Deposit', icon: Wallet, path: '/deposit' },
+    { label: 'Withdraw', icon: CircleDollarSign, path: '/withdraw' },
+    { 
+      label: 'Start Mining', 
+      icon: Pickaxe, 
+      subItems: [
+        { label: 'Buy Plan', path: '/start-mining', view: 'buy' },
+        { label: 'Purchased Plans', path: '/start-mining', view: 'purchased' },
+      ]
+    },
+    { label: 'Referral', icon: Gift },
+    { label: 'Support Ticket', icon: MessageSquare },
+    { label: 'My Account', icon: User },
+  ];
+
+  const [selectedPlan, setSelectedPlan] = useState<PurchasedPlan | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Sample purchased plans data
+  const purchasedPlans: PurchasedPlan[] = [
+    {
+      id: '1',
+      sn: 1,
+      planName: 'RECEOVE',
+      price: 5,
+      returnPerDay: { min: 0.00005265, max: 0.00008130, currency: 'BTC' },
+      totalDays: 0,
+      remainingDays: 0,
+      status: 'pending',
+      purchasedDate: '18 Jun, 2025',
+      miner: 'BTC',
+      fixedReturn: 0,
+    },
+    // Add more sample plans as needed
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#0B1421] text-white">
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className="w-64 min-h-screen bg-[#0F1A2B] border-r border-white/5 p-4">
+          <div className="space-y-2">
+            {menuItems.map((item) => (
+              <div key={item.label}>
+                {item.subItems ? (
+                  <div>
+                    <div className={`flex items-center justify-between px-4 py-3 font-medium ${
+                      item.label === 'Start Mining' ? 'text-yellow-400' : 'text-white/70'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </div>
+                    </div>
+                    <div className="ml-4 space-y-1">
+                      {item.subItems.map((subItem: any) => (
+                        <button
+                          key={subItem.label}
+                          onClick={() => {
+                            if (subItem.view) {
+                              setActiveView(subItem.view as 'buy' | 'purchased');
+                            } else {
+                              navigate(subItem.path);
+                            }
+                          }}
+                          className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition ${
+                            (subItem.view === 'buy' && activeView === 'buy') ||
+                            (subItem.view === 'purchased' && activeView === 'purchased')
+                              ? 'bg-yellow-500/20 text-yellow-400'
+                              : 'text-white/70 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {subItem.view === 'buy' ? (
+                            <ShoppingCart className="h-4 w-4" />
+                          ) : (
+                            <List className="h-4 w-4" />
+                          )}
+                          {subItem.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => item.path && navigate(item.path)}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-white/40" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          {/* Header */}
+          <header className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold">
+                {activeView === 'buy' ? 'Buy Plan' : 'Purchased Plans'}
+              </h1>
+            </div>
+            <Button
+              variant="outline"
+              className="border-rose-500 text-rose-400 hover:bg-rose-500/10"
+              onClick={handleSignOut}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </header>
+
+          {activeView === 'buy' ? (
+            /* Buy Plan View */
+            <div className="space-y-6">
+              {/* Info Banner */}
+              <div className="bg-[#1E3A5F] border border-[#2E5A8F] rounded-lg p-6">
+                <h2 className="text-xl font-semibold text-[#87CEEB] mb-4">
+                  Your selected mining contract Is activated automatically once your payment Is confirmed.
+                </h2>
+                <div className="space-y-3 text-white/90 text-sm">
+                  <p>
+                    Mining income is released once a day. You can withdraw the output at any time (without waiting for the end of the contract) There is no limit to the number of withdrawals
+                  </p>
+                  <p>You can have the fastest bitcoin miner in 5 minutes:</p>
+                  <ol className="list-decimal list-inside space-y-1 ml-4">
+                    <li>Choose one of the below miners</li>
+                    <li>Click on "Buy Now" button and pay the miner price</li>
+                    <li>Your miner is launched and adds bitcoin to your balance every second (until 1 year)</li>
+                    <li>Your bitcoin increase every minute and you can withdraw it or buy a new bigger miner</li>
+                  </ol>
+                  <p>
+                    USDT. The profit of USDT Plans comes from intelligent quantitative trading strategies. Daily earnings may fluctuate based on Binance trading depth. The contract period is only one day, so you can withdraw all your funds the next day. There will be no automatic re-investment after the contract expires. If you need to re-invest, you need to manually purchase the plan again.
+                  </p>
+                </div>
+              </div>
+
+              {/* Currency Tabs */}
+              <div className="flex gap-4 items-center">
+                <button
+                  onClick={() => setSelectedCurrency('BTC')}
+                  className={`px-6 py-3 rounded-lg font-semibold transition ${
+                    selectedCurrency === 'BTC'
+                      ? 'bg-yellow-500 text-black'
+                      : 'bg-[#0F1A2B] text-white/70 hover:text-white'
+                  }`}
+                >
+                  BTC
+                </button>
+                <button
+                  onClick={() => setSelectedCurrency('LTC')}
+                  className={`px-6 py-3 rounded-lg font-semibold transition ${
+                    selectedCurrency === 'LTC'
+                      ? 'bg-yellow-500 text-black'
+                      : 'bg-[#0F1A2B] text-white/70 hover:text-white'
+                  }`}
+                >
+                  LTC
+                </button>
+                <div className="ml-4 text-lg font-semibold">
+                  {selectedCurrency}≈${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+
+              {/* Mining Plans Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentPlans.map((plan) => {
+                  const progress = (plan.sold / plan.available) * 100;
+                  const remaining = plan.available - plan.sold;
+
+                  return (
+                    <Card key={plan.id} className="bg-[#111B2D] border-white/5 overflow-hidden">
+                      {/* Header */}
+                      <div className="bg-yellow-500 p-4">
+                        <div className="text-white text-sm font-semibold mb-2">{plan.name}</div>
+                        <div className="text-white text-2xl font-bold">
+                          ${plan.price.toLocaleString()}
+                          <span className="text-lg font-normal"> / {plan.duration} {plan.duration === 1 ? 'Day' : 'Days'}</span>
+                        </div>
+                      </div>
+
+                      {/* Body */}
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-center gap-2 text-white/80 text-sm">
+                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                          <span>Hardware: {plan.hardware}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-white/80 text-sm">
+                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                          <span>Contract duration: {plan.duration} {plan.duration === 1 ? 'day' : 'days'}</span>
+                        </div>
+                        {plan.totalMining && (
+                          <div className="flex items-center gap-2 text-white/80 text-sm">
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <span>
+                              Total mining: {plan.totalMining.btc?.toFixed(6) || plan.totalMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.totalMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        )}
+                        {plan.dailyMining && (
+                          <div className="flex items-center gap-2 text-white/80 text-sm">
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <span>
+                              Daily mining: {plan.dailyMining.btc?.toFixed(6) || plan.dailyMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.dailyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        )}
+                        {plan.monthlyMining && (
+                          <div className="flex items-center gap-2 text-white/80 text-sm">
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <span>
+                              Monthly mining: {plan.monthlyMining.btc?.toFixed(6) || plan.monthlyMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.monthlyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        )}
+                        {plan.referralRewards && (
+                          <div className="flex items-center gap-2 text-white/80 text-sm">
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <span>Referral Rewards: {plan.referralRewards} USDT</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-white/80 text-sm">
+                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                          <span>
+                            Purchase Agreement: <span className="text-red-400 cursor-pointer hover:underline">View all</span>
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs text-white/60">
+                            <span>{plan.available} / {plan.sold} ({progress.toFixed(1)}%)</span>
+                          </div>
+                          <div className="relative h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                            <div 
+                              className="absolute top-0 left-0 h-full bg-yellow-500 transition-all"
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        {/* Buy Now Button */}
+                        <Button
+                          onClick={() => handleBuyPlan(plan)}
+                          className="w-full bg-yellow-500 text-black hover:bg-yellow-400 font-semibold"
+                        >
+                          Buy Now
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Our Partners Section */}
+              <div className="mt-12">
+                <h2 className="text-2xl font-bold text-center mb-8">Our Partners</h2>
+                <div className="grid grid-cols-5 gap-4">
+                  {[
+                    { name: 'Google', logo: 'https://logo.clearbit.com/google.com', domain: 'google.com' },
+                    { name: 'Forbes', logo: 'https://logo.clearbit.com/forbes.com', domain: 'forbes.com' },
+                    { name: 'Yahoo!', logo: 'https://logo.clearbit.com/yahoo.com', domain: 'yahoo.com' },
+                    { name: 'YouTube', logo: 'https://logo.clearbit.com/youtube.com', domain: 'youtube.com' },
+                    { name: 'BINANCE', logo: 'https://logo.clearbit.com/binance.com', domain: 'binance.com' },
+                    { name: 'Coinbase', logo: 'https://logo.clearbit.com/coinbase.com', domain: 'coinbase.com' },
+                    { name: 'CoinPedia', logo: 'https://logo.clearbit.com/coinpedia.org', domain: 'coinpedia.org' },
+                    { name: 'AMBCRYPTO', logo: 'https://logo.clearbit.com/ambcrypto.com', domain: 'ambcrypto.com' },
+                    { name: 'BENZINGA', logo: 'https://logo.clearbit.com/benzinga.com', domain: 'benzinga.com' },
+                    { name: 'CoinGape', logo: 'https://logo.clearbit.com/coingape.com', domain: 'coingape.com' },
+                    { name: 'GlobeNewswire', logo: 'https://logo.clearbit.com/globenewswire.com', domain: 'globenewswire.com' },
+                    { name: 'cryptonews', logo: 'https://logo.clearbit.com/cryptonews.com', domain: 'cryptonews.com' },
+                    { name: 'Analytics Insight', logo: 'https://logo.clearbit.com/analyticsinsight.net', domain: 'analyticsinsight.net' },
+                    { name: 'SOURCEFORGE', logo: 'https://logo.clearbit.com/sourceforge.net', domain: 'sourceforge.net' },
+                    { name: 'MarketWatch', logo: 'https://logo.clearbit.com/marketwatch.com', domain: 'marketwatch.com' },
+                  ].map((partner) => (
+                    <div 
+                      key={partner.name} 
+                      className="bg-white rounded p-4 flex items-center justify-center h-20 hover:bg-gray-50 transition relative"
+                    >
+                      <img 
+                        src={partner.logo} 
+                        alt={partner.name}
+                        className="max-w-full max-h-full object-contain"
+                        loading="lazy"
+                        onError={(e) => {
+                          // Fallback to text if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent && !parent.querySelector('.fallback-text')) {
+                            const fallback = document.createElement('span');
+                            fallback.className = 'fallback-text text-gray-600 text-xs font-semibold text-center';
+                            fallback.textContent = partner.name;
+                            parent.appendChild(fallback);
+                          }
+                        }}
+                      />
+                      <span className="fallback-text text-gray-600 text-xs font-semibold text-center hidden">
+                        {partner.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <footer className="mt-12 border-t border-white/10 pt-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="rounded-full bg-[#f97316] px-2 py-1 text-sm font-bold">BTC</span>
+                      <span className="text-xl font-semibold">BTCMining</span>
+                    </div>
+                    <p className="text-white/70 text-sm">
+                      Btc Mining is one of the leading cryptocurrency mining platforms, offering cryptocurrency mining capacities in every range - for newcomers. Our mission is to make acquiring cryptocurrencies easy and fast for everyone.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold mb-4 border-b border-yellow-500 pb-2 inline-block">Quick Links</h3>
+                    <ul className="space-y-2 text-white/70 text-sm">
+                      <li><a href="#" className="hover:text-yellow-400">Team</a></li>
+                      <li><a href="#" className="hover:text-yellow-400">AboutUs</a></li>
+                      <li><a href="#" className="hover:text-yellow-400">Plans</a></li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold mb-4 border-b border-yellow-500 pb-2 inline-block">Useful Links</h3>
+                    <ul className="space-y-2 text-white/70 text-sm">
+                      <li><a href="#" className="hover:text-yellow-400">Usage Policy</a></li>
+                      <li><a href="#" className="hover:text-yellow-400">Cookie Policy</a></li>
+                      <li><a href="#" className="hover:text-yellow-400">Privacy Policy</a></li>
+                      <li><a href="#" className="hover:text-yellow-400">Terms of Service</a></li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold mb-4 border-b border-yellow-500 pb-2 inline-block">Contact Info</h3>
+                    <ul className="space-y-2 text-white/70 text-sm">
+                      <li className="flex items-center gap-2">
+                        <span>📞</span>
+                        <span>VIP Customers Only</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span>✉️</span>
+                        <span>[email protected]</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span>📍</span>
+                        <span>57 Kingfisher Grove, Willenhall, England, WV12 5HG (Company No. 15415402)</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </footer>
+            </div>
+          ) : (
+            /* Purchased Plans View */
+            <div className="bg-[#111B2D] border border-white/5 rounded-lg overflow-hidden">
+              {purchasedPlans.length === 0 ? (
+                <div className="text-center py-12 p-6">
+                  <p className="text-white/60 text-lg">No purchased plans yet</p>
+                  <Button
+                    onClick={() => setActiveView('buy')}
+                    className="mt-4 bg-yellow-500 text-black hover:bg-yellow-400"
+                  >
+                    Browse Plans
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-[#0B1421] border-b border-white/10">
+                        <th className="text-left py-4 px-4 text-white/80 font-semibold">S.N.</th>
+                        <th className="text-left py-4 px-4 text-white/80 font-semibold">Plan</th>
+                        <th className="text-left py-4 px-4 text-white/80 font-semibold">Price</th>
+                        <th className="text-left py-4 px-4 text-white/80 font-semibold">Return/Day</th>
+                        <th className="text-left py-4 px-4 text-white/80 font-semibold">Total Days</th>
+                        <th className="text-left py-4 px-4 text-white/80 font-semibold">Remaining Days</th>
+                        <th className="text-left py-4 px-4 text-white/80 font-semibold">Status</th>
+                        <th className="text-left py-4 px-4 text-white/80 font-semibold">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {purchasedPlans.map((plan) => (
+                        <tr key={plan.id} className="border-b border-white/5 hover:bg-white/5">
+                          <td className="py-4 px-4 text-white/80">{plan.sn}</td>
+                          <td className="py-4 px-4 text-white/80">{plan.planName}</td>
+                          <td className="py-4 px-4 text-white/80">{plan.price} USD</td>
+                          <td className="py-4 px-4 text-white/80">
+                            {plan.returnPerDay.min.toFixed(8)} - {plan.returnPerDay.max.toFixed(8)} {plan.returnPerDay.currency}
+                          </td>
+                          <td className="py-4 px-4 text-white/80">{plan.totalDays}</td>
+                          <td className="py-4 px-4 text-white/80">{plan.remainingDays}</td>
+                          <td className="py-4 px-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              plan.status === 'pending'
+                                ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50'
+                                : plan.status === 'active'
+                                ? 'bg-green-500/20 text-green-400'
+                                : plan.status === 'completed'
+                                ? 'bg-blue-500/20 text-blue-400'
+                                : 'bg-gray-500/20 text-gray-400'
+                            }`}>
+                              {plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4">
+                            <Button
+                              onClick={() => {
+                                setSelectedPlan(plan);
+                                setIsDialogOpen(true);
+                              }}
+                              className="bg-yellow-500 text-black hover:bg-yellow-400"
+                            >
+                              View
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Plan Details Dialog */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent className="bg-[#111B2D] border-yellow-500/50 text-white max-w-md [&>button]:hidden">
+              <DialogHeader className="relative">
+                <DialogTitle className="text-white text-xl font-bold mb-4 pr-8">
+                  Purchased Plan Details
+                </DialogTitle>
+                <button
+                  onClick={() => setIsDialogOpen(false)}
+                  className="absolute right-4 top-4 w-6 h-6 rounded-full bg-white flex items-center justify-center hover:bg-white/90 transition"
+                >
+                  <span className="text-red-500 font-bold text-lg leading-none">×</span>
+                </button>
+              </DialogHeader>
+              {selectedPlan && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Purchased Date:</span>
+                    <span className="text-white font-medium">{selectedPlan.purchasedDate}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Plan Title:</span>
+                    <span className="text-white font-medium">{selectedPlan.planName}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Plan Price:</span>
+                    <span className="text-white font-medium">{selectedPlan.price} USD</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Miner:</span>
+                    <span className="text-white font-medium">{selectedPlan.miner}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Return /Day:</span>
+                    <span className="text-white font-medium">
+                      {selectedPlan.returnPerDay.min.toFixed(8)} - {selectedPlan.returnPerDay.max.toFixed(8)} {selectedPlan.returnPerDay.currency}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Total Days:</span>
+                    <span className="text-white font-medium">{selectedPlan.totalDays}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Fixed Return:</span>
+                    <span className="text-white font-medium">{selectedPlan.fixedReturn} {selectedPlan.returnPerDay.currency}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Remaining Days:</span>
+                    <span className="text-white font-medium">{selectedPlan.remainingDays}</span>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default StartMining;
+
