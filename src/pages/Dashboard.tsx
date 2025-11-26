@@ -30,6 +30,8 @@ import {
   Key,
   Power,
   Info,
+  MapPin,
+  Mail,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -109,7 +111,7 @@ const Dashboard = () => {
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
   const [language, setLanguage] = useState<LanguageKey>('en');
-  const [activeView, setActiveView] = useState<'dashboard' | 'my-referrals' | 'referral-bonus-logs' | 'withdraw-logs' | 'create-tickets' | 'all-tickets' | 'profile' | 'wallets' | '2fa-security' | 'change-password'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'my-referrals' | 'referral-bonus-logs' | 'withdraw-logs' | 'create-tickets' | 'all-tickets' | 'profile' | 'wallets' | '2fa-security' | 'change-password' | 'team' | 'about-us'>('dashboard');
   const [referralExpanded, setReferralExpanded] = useState(false);
   
   // Auto-expand referral menu if a referral view is active
@@ -419,8 +421,77 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#0B1421] text-white">
+      {/* Top Navigation Bar */}
+      <header className="bg-[#0F1A2B] border-b border-white/5 px-6 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+              <span className="text-black font-bold text-lg">B</span>
+            </div>
+            <span className="text-xl font-bold text-white">BTCMining</span>
+          </div>
+          
+          {/* Center Navigation */}
+          <nav className="flex items-center gap-6">
+            <button
+              onClick={() => {
+                setActiveView('dashboard');
+                navigate('/dashboard');
+              }}
+              className={`text-sm font-medium transition-colors ${
+                activeView === 'dashboard' ? 'text-yellow-400' : 'text-white/70 hover:text-white'
+              }`}
+            >
+              Home
+            </button>
+            <button
+              onClick={() => setActiveView('team')}
+              className={`text-sm font-medium transition-colors ${
+                activeView === 'team' ? 'text-yellow-400' : 'text-white/70 hover:text-white'
+              }`}
+            >
+              Team
+            </button>
+            <button
+              onClick={() => setActiveView('about-us')}
+              className={`text-sm font-medium transition-colors ${
+                activeView === 'about-us' ? 'text-yellow-400' : 'text-white/70 hover:text-white'
+              }`}
+            >
+              AboutUs
+            </button>
+          </nav>
+          
+          {/* Right Side - Language and Logout */}
+          <div className="flex items-center gap-4">
+            <select
+              className="rounded-md bg-transparent px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as LanguageKey)}
+            >
+              <option className="text-black" value="en">
+                English
+              </option>
+              <option className="text-black" value="es">
+                Español
+              </option>
+              <option className="text-black" value="fr">
+                Français
+              </option>
+              <option className="text-black" value="de">
+                Deutsch
+              </option>
+            </select>
+            <Button className="bg-rose-500 hover:bg-rose-600" onClick={handleSignOut}>
+              Logout
+            </Button>
+          </div>
+        </div>
+      </header>
+
       <div className="flex">
-        <aside className="w-64 min-h-screen bg-[#0F1A2B] border-r border-white/5 p-4">
+        <aside className="w-64 min-h-[calc(100vh-73px)] bg-[#0F1A2B] border-r border-white/5 p-4">
           <div className="space-y-2">
             {menuItems.map((item) => (
               <div key={item.label}>
@@ -429,11 +500,32 @@ const Dashboard = () => {
                     <button
                       onClick={() => {
                         if (item.label === 'Referral') {
+                          // If clicking on Referral, close other menus and toggle Referral
+                          setSupportTicketExpanded(false);
+                          setAccountExpanded(false);
                           setReferralExpanded(!referralExpanded);
+                          // If expanding, set to first sub-item view
+                          if (!referralExpanded && item.subItems && item.subItems.length > 0) {
+                            setActiveView(item.subItems[0].view);
+                          }
                         } else if (item.label === 'Support Ticket') {
+                          // If clicking on Support Ticket, close other menus and toggle Support Ticket
+                          setReferralExpanded(false);
+                          setAccountExpanded(false);
                           setSupportTicketExpanded(!supportTicketExpanded);
+                          // If expanding, set to first sub-item view
+                          if (!supportTicketExpanded && item.subItems && item.subItems.length > 0) {
+                            setActiveView(item.subItems[0].view);
+                          }
                         } else if (item.label === 'My Account') {
+                          // If clicking on My Account, close other menus and toggle My Account
+                          setReferralExpanded(false);
+                          setSupportTicketExpanded(false);
                           setAccountExpanded(!accountExpanded);
+                          // If expanding, set to first sub-item view
+                          if (!accountExpanded && item.subItems && item.subItems.length > 0) {
+                            setActiveView(item.subItems[0].view);
+                          }
                         }
                       }}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition ${
@@ -558,6 +650,11 @@ const Dashboard = () => {
                 ) : (
                   <button
                     onClick={() => {
+                      // Close all expanded menus when clicking on a regular menu item
+                      setReferralExpanded(false);
+                      setSupportTicketExpanded(false);
+                      setAccountExpanded(false);
+                      
                       if (item.path) {
                         navigate(item.path);
                       }
@@ -594,30 +691,6 @@ const Dashboard = () => {
         </aside>
 
         <main className="flex-1 p-6 space-y-6">
-          {/* Header with language and logout */}
-          <div className="flex items-center justify-end gap-4 mb-4">
-            <select
-              className="rounded-md bg-transparent px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as LanguageKey)}
-            >
-              <option className="text-black" value="en">
-                English
-              </option>
-              <option className="text-black" value="es">
-                Español
-              </option>
-              <option className="text-black" value="fr">
-                Français
-              </option>
-              <option className="text-black" value="de">
-                Deutsch
-              </option>
-            </select>
-            <Button className="bg-rose-500 hover:bg-rose-600" onClick={handleSignOut}>
-              Logout
-            </Button>
-          </div>
 
           {/* My Referrals Page */}
           {activeView === 'my-referrals' && (
@@ -1370,6 +1443,577 @@ const Dashboard = () => {
                   Change Password
                 </Button>
               </form>
+            </div>
+          )}
+
+          {/* Team Page */}
+          {activeView === 'team' && (
+            <div className="space-y-12 pb-12">
+              {/* Core Leadership Section */}
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-3xl font-bold text-white mb-2">Core Leadership</h2>
+                  <div className="w-16 h-0.5 bg-cyan-400"></div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Alexander Wright */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-6 border border-white/5">
+                    <div className="w-32 h-32 mx-auto mb-4 rounded-full border-4 border-cyan-400 overflow-hidden">
+                      <img 
+                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop" 
+                        alt="Alexander Wright"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h3 className="text-xl font-bold text-white text-center mb-2">Alexander Wright</h3>
+                    <p className="text-white/70 text-center mb-3">Founder & CEO</p>
+                    <p className="text-white/80 text-sm text-left">
+                      Former blockchain architect at Ethereum Foundation with 12+ years of experience in cryptocurrency mining operations. Alexander leads our strategic vision and technological innovation.
+                    </p>
+                  </div>
+                  
+                  {/* Sophia Smith */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-6 border border-white/5">
+                    <div className="w-32 h-32 mx-auto mb-4 rounded-full border-4 border-cyan-400 overflow-hidden">
+                      <img 
+                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop" 
+                        alt="Sophia Smith"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h3 className="text-xl font-bold text-white text-center mb-2">Sophia Smith</h3>
+                    <p className="text-white/70 text-center mb-3">CTO & Head of Research</p>
+                    <p className="text-white/80 text-sm text-left">
+                      Computer science PhD with specialization in distributed systems. Sophia oversees our technological infrastructure and leads research into next-generation mining algorithms and hardware optimization.
+                    </p>
+                  </div>
+                  
+                  {/* Michael Rodriguez */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-6 border border-white/5">
+                    <div className="w-32 h-32 mx-auto mb-4 rounded-full border-4 border-cyan-400 overflow-hidden">
+                      <img 
+                        src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop" 
+                        alt="Michael Rodriguez"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h3 className="text-xl font-bold text-white text-center mb-2">Michael Rodriguez</h3>
+                    <p className="text-white/70 text-center mb-3">COO & Strategic Partnerships</p>
+                    <p className="text-white/80 text-sm text-left">
+                      Former venture capitalist with extensive experience in scaling Web3 startups. Michael manages our operational efficiency and builds strategic relationships with key industry players.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Revolutionizing Crypto Mining Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div className="space-y-6 relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent blur-3xl"></div>
+                  <div className="relative">
+                    <h2 className="text-3xl font-bold text-white mb-4">Revolutionizing Crypto Mining</h2>
+                    <p className="text-white/80 text-lg mb-8">
+                      We're building the most efficient, sustainable, and profitable mining infrastructure for the decentralized future.
+                    </p>
+                    <div className="grid grid-cols-3 gap-6">
+                      <div>
+                        <div className="text-4xl font-bold text-white mb-2">250+</div>
+                        <div className="text-white/70 text-sm">Mining Rigs</div>
+                      </div>
+                      <div>
+                        <div className="text-4xl font-bold text-white mb-2">43%</div>
+                        <div className="text-white/70 text-sm">Energy Efficiency</div>
+                      </div>
+                      <div>
+                        <div className="text-4xl font-bold text-white mb-2">24/7</div>
+                        <div className="text-white/70 text-sm">Technical Support</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative">
+                  <div className="aspect-square rounded-lg overflow-hidden border border-white/10">
+                    <img 
+                      src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=600&h=600&fit=crop" 
+                      alt="Cryptocurrency coins"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Our Team Section */}
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-3xl font-bold text-white mb-2">Our Team</h2>
+                  <div className="w-16 h-0.5 bg-cyan-400"></div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* David Kim */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-6 border border-white/5">
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full border-2 border-cyan-400 overflow-hidden">
+                      <img 
+                        src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop" 
+                        alt="David Kim"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h3 className="text-lg font-bold text-white text-center mb-1">David Kim</h3>
+                    <p className="text-white/70 text-center mb-3 text-sm">Backend Developer</p>
+                    <p className="text-white/80 text-sm text-left">
+                      Specializes in blockchain node architecture and mining pool optimization with 5+ years experience in the field.
+                    </p>
+                  </div>
+                  
+                  {/* Abraham Johnson */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-6 border border-white/5">
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full border-2 border-cyan-400 overflow-hidden">
+                      <img 
+                        src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop" 
+                        alt="Abraham Johnson"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h3 className="text-lg font-bold text-white text-center mb-1">Abraham Johnson</h3>
+                    <p className="text-white/70 text-center mb-3 text-sm">Hardware Engineer</p>
+                    <p className="text-white/80 text-sm text-left">
+                      Expert in ASIC design and thermodynamics optimization. Previously worked at Bitmain developing mining hardware.
+                    </p>
+                  </div>
+                  
+                  {/* James Wilson */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-6 border border-white/5">
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full border-2 border-cyan-400 overflow-hidden">
+                      <img 
+                        src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop" 
+                        alt="James Wilson"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h3 className="text-lg font-bold text-white text-center mb-1">James Wilson</h3>
+                    <p className="text-white/70 text-center mb-3 text-sm">Security Specialist</p>
+                    <p className="text-white/80 text-sm text-left">
+                      Blockchain security expert with background in cryptography and secure wallet implementations.
+                    </p>
+                  </div>
+                  
+                  {/* Jack Thompson */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-6 border border-white/5">
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full border-2 border-cyan-400 overflow-hidden">
+                      <img 
+                        src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=400&fit=crop" 
+                        alt="Jack Thompson"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h3 className="text-lg font-bold text-white text-center mb-1">Jack Thompson</h3>
+                    <p className="text-white/70 text-center mb-3 text-sm">Data Analyst</p>
+                    <p className="text-white/80 text-sm text-left">
+                      Market intelligence expert focused on cryptocurrency trends and mining profitability analysis.
+                    </p>
+                  </div>
+                  
+                  {/* Robert Williams */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-6 border border-white/5">
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full border-2 border-cyan-400 overflow-hidden">
+                      <img 
+                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop" 
+                        alt="Robert Williams"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h3 className="text-lg font-bold text-white text-center mb-1">Robert Williams</h3>
+                    <p className="text-white/70 text-center mb-3 text-sm">Operations Manager</p>
+                    <p className="text-white/80 text-sm text-left">
+                      Logistics expert managing our global mining operations and ensuring seamless day-to-day functionality.
+                    </p>
+                  </div>
+                  
+                  {/* Olivia Martinez */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-6 border border-white/5">
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full border-2 border-cyan-400 overflow-hidden">
+                      <img 
+                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop" 
+                        alt="Olivia Martinez"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h3 className="text-lg font-bold text-white text-center mb-1">Olivia Martinez</h3>
+                    <p className="text-white/70 text-center mb-3 text-sm">Client Relations</p>
+                    <p className="text-white/80 text-sm text-left">
+                      Handles investor communications and ensures exceptional customer experience across all touchpoints.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Supported Cryptocurrencies Section */}
+              <div className="space-y-6">
+                <h2 className="text-3xl font-bold text-white text-center">Supported Cryptocurrencies</h2>
+                <div className="flex flex-wrap justify-center items-center gap-8">
+                  {/* Bitcoin */}
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-yellow-500 flex items-center justify-center p-2">
+                    <img 
+                      src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" 
+                      alt="Bitcoin"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement?.remove();
+                      }}
+                    />
+                  </div>
+                  {/* Ethereum */}
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-800 flex items-center justify-center p-2">
+                    <img 
+                      src="https://assets.coingecko.com/coins/images/279/large/ethereum.png" 
+                      alt="Ethereum"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement?.remove();
+                      }}
+                    />
+                  </div>
+                  {/* Avalanche */}
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-red-600 flex items-center justify-center p-2">
+                    <img 
+                      src="https://assets.coingecko.com/coins/images/12559/large/avalanche-avax-logo.png" 
+                      alt="Avalanche"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement?.remove();
+                      }}
+                    />
+                  </div>
+                  {/* Cardano */}
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-blue-900 flex items-center justify-center p-2">
+                    <img 
+                      src="https://assets.coingecko.com/coins/images/975/large/cardano.png" 
+                      alt="Cardano"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement?.remove();
+                      }}
+                    />
+                  </div>
+                  {/* Polkadot */}
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center p-2">
+                    <img 
+                      src="https://assets.coingecko.com/coins/images/12171/large/polkadot.png" 
+                      alt="Polkadot"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement?.remove();
+                      }}
+                    />
+                  </div>
+                  {/* Solana */}
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 flex items-center justify-center p-2">
+                    <img 
+                      src="https://assets.coingecko.com/coins/images/4128/large/solana.png" 
+                      alt="Solana"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement?.remove();
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Our Partners Section */}
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-3xl font-bold text-white mb-2">Our Partners</h2>
+                  <div className="w-16 h-0.5 bg-cyan-400"></div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+                  {/* Bitstamp */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
+                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="https://logos-world.net/wp-content/uploads/2021/08/Bitstamp-Logo.png" 
+                        alt="Bitstamp"
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          e.currentTarget.closest('.partner-logo-container')?.remove();
+                        }}
+                      />
+                    </div>
+                    <p className="text-white/70 text-sm text-center">Bitstamp</p>
+                  </div>
+                  
+                  {/* Blockchain.com */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
+                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="https://logos-world.net/wp-content/uploads/2021/08/Blockchain-Logo.png" 
+                        alt="Blockchain.com"
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          e.currentTarget.closest('.partner-logo-container')?.remove();
+                        }}
+                      />
+                    </div>
+                    <p className="text-white/70 text-sm text-center">Blockchain.com</p>
+                  </div>
+                  
+                  {/* Block Energy */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
+                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="https://via.placeholder.com/64x64/000000/FFFFFF?text=BE" 
+                        alt="Block Energy"
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          e.currentTarget.closest('.partner-logo-container')?.remove();
+                        }}
+                      />
+                    </div>
+                    <p className="text-white/70 text-sm text-center">Block Energy</p>
+                  </div>
+                  
+                  {/* Hetzner Online */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
+                    <div className="w-16 h-16 bg-red-600 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="https://www.hetzner.com/assets/images/hetzner-logo.svg" 
+                        alt="Hetzner Online"
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          e.currentTarget.closest('.partner-logo-container')?.remove();
+                        }}
+                      />
+                    </div>
+                    <p className="text-white/70 text-sm text-center">Hetzner Online</p>
+                  </div>
+                  
+                  {/* Gandi */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
+                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="https://www.gandi.net/static/images/gandi-logo.svg" 
+                        alt="Gandi"
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          e.currentTarget.closest('.partner-logo-container')?.remove();
+                        }}
+                      />
+                    </div>
+                    <p className="text-white/70 text-sm text-center">Gandi</p>
+                  </div>
+                  
+                  {/* HashPower */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
+                    <div className="w-16 h-16 bg-black rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="https://via.placeholder.com/64x64/000000/FFFFFF?text=HP" 
+                        alt="HashPower"
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          e.currentTarget.closest('.partner-logo-container')?.remove();
+                        }}
+                      />
+                    </div>
+                    <p className="text-white/70 text-sm text-center">HashPower</p>
+                  </div>
+                  
+                  {/* CryptoShield */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
+                    <div className="w-16 h-16 bg-blue-900 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="https://via.placeholder.com/64x64/1e3a8a/FFFFFF?text=CS" 
+                        alt="CryptoShield"
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          e.currentTarget.closest('.partner-logo-container')?.remove();
+                        }}
+                      />
+                    </div>
+                    <p className="text-white/70 text-sm text-center">CryptoShield</p>
+                  </div>
+                  
+                  {/* CryptoCircuit */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
+                    <div className="w-16 h-16 bg-purple-900 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="https://via.placeholder.com/64x64/581c87/FFFFFF?text=CC" 
+                        alt="CryptoCircuit"
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          e.currentTarget.closest('.partner-logo-container')?.remove();
+                        }}
+                      />
+                    </div>
+                    <p className="text-white/70 text-sm text-center">CryptoCircuit</p>
+                  </div>
+                  
+                  {/* BitVenture */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
+                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="https://via.placeholder.com/64x64/FFFFFF/000000?text=BV" 
+                        alt="BitVenture"
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          e.currentTarget.closest('.partner-logo-container')?.remove();
+                        }}
+                      />
+                    </div>
+                    <p className="text-white/70 text-sm text-center">BitVenture</p>
+                  </div>
+                  
+                  {/* TechWatt */}
+                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
+                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="https://via.placeholder.com/64x64/FFFFFF/000000?text=TW" 
+                        alt="TechWatt"
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          e.currentTarget.closest('.partner-logo-container')?.remove();
+                        }}
+                      />
+                    </div>
+                    <p className="text-white/70 text-sm text-center">TechWatt</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* About Us Page */}
+          {activeView === 'about-us' && (
+            <div className="space-y-6">
+              <h1 className="text-3xl font-bold text-white mb-6">About Us</h1>
+              
+              <div className="space-y-6">
+                {/* Mission Section */}
+                <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-8">
+                  <h2 className="text-2xl font-semibold text-white mb-4">Our Mission</h2>
+                  <p className="text-white/80 text-lg leading-relaxed">
+                    BTCMining is one of the leading cryptocurrency mining platforms, offering cryptocurrency mining capacities in every range - for newcomers and experienced miners alike. Our mission is to make acquiring cryptocurrencies easy and fast for everyone.
+                  </p>
+                </div>
+                
+                {/* Company Overview */}
+                <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-8">
+                  <h2 className="text-2xl font-semibold text-white mb-4">Company Overview</h2>
+                  <div className="space-y-4 text-white/80">
+                    <p>
+                      As a wholly owned subsidiary of Digital Currency Group, we offer clients the opportunity to tap into our ecosystem. BTCMining has entered a deep strategic partnership agreement with Coinbase, the largest cryptocurrency exchange in the United States.
+                    </p>
+                    <p>
+                      BTCMining already supports direct transfers from Coinbase exchange accounts to BTCMining accounts. If you are also a Coinbase client, you can choose Coinbase Payments when making payments.
+                    </p>
+                    <p>
+                      The funds are supervised by Coinbase, a third-party listed company, ensuring the highest level of security and trust for our users.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Why Choose Us */}
+                <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-8">
+                  <h2 className="text-2xl font-semibold text-white mb-4">Why Choose BTCMining?</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div className="bg-[#0B1421] rounded-lg p-6 border border-white/5">
+                      <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center mb-4">
+                        <Zap className="h-6 w-6 text-yellow-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">High Performance</h3>
+                      <p className="text-white/70 text-sm">
+                        Our state-of-the-art mining facilities ensure optimal hash rates and maximum profitability.
+                      </p>
+                    </div>
+                    
+                    <div className="bg-[#0B1421] rounded-lg p-6 border border-white/5">
+                      <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center mb-4">
+                        <Lock className="h-6 w-6 text-yellow-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">Secure & Trusted</h3>
+                      <p className="text-white/70 text-sm">
+                        Funds are supervised by Coinbase, providing enterprise-level security and peace of mind.
+                      </p>
+                    </div>
+                    
+                    <div className="bg-[#0B1421] rounded-lg p-6 border border-white/5">
+                      <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center mb-4">
+                        <CircleDollarSign className="h-6 w-6 text-yellow-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">Daily Payouts</h3>
+                      <p className="text-white/70 text-sm">
+                        Receive your mining rewards daily with transparent and reliable payment processing.
+                      </p>
+                    </div>
+                    
+                    <div className="bg-[#0B1421] rounded-lg p-6 border border-white/5">
+                      <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center mb-4">
+                        <Headphones className="h-6 w-6 text-yellow-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">24/7 Support</h3>
+                      <p className="text-white/70 text-sm">
+                        Our dedicated support team is available around the clock to assist you with any questions.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Statistics */}
+                <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-8">
+                  <h2 className="text-2xl font-semibold text-white mb-6">Our Achievements</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="text-center">
+                      <div className="text-4xl font-bold text-yellow-400 mb-2">100K+</div>
+                      <div className="text-white/70">Active Users</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-4xl font-bold text-yellow-400 mb-2">$50M+</div>
+                      <div className="text-white/70">Mined Value</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-4xl font-bold text-yellow-400 mb-2">99.9%</div>
+                      <div className="text-white/70">Uptime</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-4xl font-bold text-yellow-400 mb-2">150+</div>
+                      <div className="text-white/70">Countries</div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Contact Section */}
+                <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-8">
+                  <h2 className="text-2xl font-semibold text-white mb-4">Get in Touch</h2>
+                  <p className="text-white/80 mb-6">
+                    Have questions or want to learn more? We're here to help!
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5 text-yellow-400" />
+                      <a href="mailto:[email protected]" className="text-white/70 hover:text-yellow-400">
+                        [email protected]
+                      </a>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <MapPin className="h-5 w-5 text-yellow-400 mt-1" />
+                      <span className="text-white/70">
+                        57 Kingfisher Grove, Willenhall, England, WV12 5HG
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Headphones className="h-5 w-5 text-yellow-400" />
+                      <span className="text-white/70">VIP Customers Only</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
