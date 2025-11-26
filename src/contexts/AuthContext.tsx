@@ -91,12 +91,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               const isAdmin = authUser.email.toLowerCase() === 'warrenokumu98@gmail.com';
               console.log('[AuthContext] Creating profile with role:', isAdmin ? 'admin' : 'user');
               
+              // Generate referral code (simple hash-based)
+              const hashString = authUser.email + userId;
+              let hash = 0;
+              for (let i = 0; i < hashString.length; i++) {
+                const char = hashString.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
+              }
+              const refCode = Math.abs(hash).toString(36).toUpperCase().substring(0, 8);
+              
               const { data: newProfile, error: createError } = await supabase
                 .from('profiles')
                 .insert({
                   user_id: userId,
                   email: authUser.email,
                   role: isAdmin ? 'admin' : 'user',
+                  referral_code: refCode,
                 })
                 .select()
                 .single();

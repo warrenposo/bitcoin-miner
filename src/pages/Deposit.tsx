@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -114,16 +115,56 @@ const Deposit = () => {
       return;
     }
     
-    // TODO: Implement actual deposit logic
-    toast({
-      title: 'Success',
-      description: 'Deposit request submitted successfully',
-    });
-    
-    // Reset form
-    setAmount('');
-    setCharge(0);
-    setPayable(0);
+    try {
+      // Generate transaction ID
+      const transactionId = `DEP${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      // Get deposit address for the selected gateway
+      const { data: depositAddress } = await supabase
+        .from('deposit_addresses')
+        .select('address')
+        .eq('gateway', gateway)
+        .eq('is_active', true)
+        .single();
+      
+      // Create deposit record
+      const { error } = await supabase
+        .from('deposits')
+        .insert({
+          user_id: user!.id,
+          transaction_id: transactionId,
+          gateway: gateway,
+          amount: parseFloat(amount),
+          charge: charge,
+          payable: payable,
+          status: 'pending',
+          deposit_address: depositAddress?.address || 'demo-address',
+        });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Deposit request submitted successfully',
+      });
+      
+      // Reset form
+      setAmount('');
+      setCharge(0);
+      setPayable(0);
+      setGateway('');
+      
+      // Refresh deposits if on log view
+      if (activeView === 'log') {
+        fetchDeposits();
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to submit deposit request',
+        variant: 'destructive',
+      });
+    }
   };
 
   const menuItems = [
@@ -143,7 +184,29 @@ const Deposit = () => {
     { label: 'My Account', icon: User },
   ];
 
-  const deposits = []; // Empty for now - will be populated from API
+  const [deposits, setDeposits] = useState<any[]>([]);
+  
+  useEffect(() => {
+    if (user && activeView === 'log') {
+      fetchDeposits();
+    }
+  }, [user, activeView]);
+
+  const fetchDeposits = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('deposits')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setDeposits(data || []);
+    } catch (error) {
+      console.error('Error fetching deposits:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0B1421] text-white">
@@ -355,21 +418,23 @@ const Deposit = () => {
                     ) : (
                       deposits.map((deposit: any) => (
                         <tr key={deposit.id} className="border-b border-white/5">
-                          <td className="py-4 px-4 text-white/80">{deposit.transactionId}</td>
-                          <td className="py-4 px-4 text-white/80">{deposit.gateway}</td>
-                          <td className="py-4 px-4 text-white/80">{deposit.amount} USD</td>
+                          <td className="py-4 px-4 text-white/80 font-mono text-sm">{deposit.transaction_id}</td>
+                          <td className="py-4 px-4 text-white/80 capitalize">{deposit.gateway}</td>
+                          <td className="py-4 px-4 text-white/80">{deposit.amount?.toFixed(2)} USD</td>
                           <td className="py-4 px-4">
-                            <span className={`px-3 py-1 rounded-full text-xs ${
+                            <span className={`px-3 py-1 rounded-full text-xs capitalize ${
                               deposit.status === 'completed' 
                                 ? 'bg-green-500/20 text-green-400'
-                                : deposit.status === 'pending'
+                                : deposit.status === 'pending' || deposit.status === 'processing'
                                 ? 'bg-yellow-500/20 text-yellow-400'
                                 : 'bg-red-500/20 text-red-400'
                             }`}>
                               {deposit.status}
                             </span>
                           </td>
-                          <td className="py-4 px-4 text-white/80">{deposit.time}</td>
+                          <td className="py-4 px-4 text-white/80">
+                            {new Date(deposit.created_at).toLocaleString()}
+                          </td>
                           <td className="py-4 px-4">
                             <Button variant="ghost" className="text-yellow-400 hover:text-yellow-300">
                               View

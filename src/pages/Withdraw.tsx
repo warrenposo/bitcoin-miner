@@ -79,14 +79,19 @@ const Withdraw = () => {
     
     setLoading(true);
     try {
-      // TODO: Replace with actual withdrawals table when created
-      // For now, using empty array
-      setWithdrawals([]);
-    } catch (error) {
+      const { data, error } = await supabase
+        .from('withdrawals')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setWithdrawals(data || []);
+    } catch (error: any) {
       console.error('Error fetching withdrawals:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load withdrawal history',
+        description: error.message || 'Failed to load withdrawal history',
         variant: 'destructive',
       });
     } finally {
@@ -140,24 +145,49 @@ const Withdraw = () => {
       return;
     }
     
-    // TODO: Implement actual withdrawal logic
-    // This would typically:
-    // 1. Create a withdrawal record in the database
-    // 2. Deduct from user balance
-    // 3. Process the withdrawal through the selected gateway
-    
-    toast({
-      title: 'Success',
-      description: 'Withdrawal request submitted successfully',
-    });
-    
-    // Reset form
-    setAmount('');
-    setWalletAddress('');
-    setGateway('');
-    
-    // Refresh balance
-    fetchBalance();
+    try {
+      // Generate transaction ID
+      const transactionId = `WD${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      // Create withdrawal record
+      const { error } = await supabase
+        .from('withdrawals')
+        .insert({
+          user_id: user!.id,
+          transaction_id: transactionId,
+          gateway: gateway,
+          amount: withdrawAmount,
+          wallet_address: walletAddress,
+          status: 'pending',
+        });
+      
+      if (error) throw error;
+      
+      // Note: In a real system, you would also deduct from user balance here
+      // For now, we'll just create the withdrawal record
+      
+      toast({
+        title: 'Success',
+        description: 'Withdrawal request submitted successfully',
+      });
+      
+      // Reset form
+      setAmount('');
+      setWalletAddress('');
+      setGateway('');
+      
+      // Refresh balance and withdrawals
+      fetchBalance();
+      if (activeView === 'log') {
+        fetchWithdrawals();
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to submit withdrawal request',
+        variant: 'destructive',
+      });
+    }
   };
 
   const menuItems = [

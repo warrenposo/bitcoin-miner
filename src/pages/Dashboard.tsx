@@ -270,10 +270,15 @@ const Dashboard = () => {
         .from('support_tickets')
         .insert({
           user_id: user.id,
+          name: ticketName,
+          email: ticketEmail,
           subject: ticketSubject,
           message: ticketMessage,
           status: 'open',
           priority: 'medium',
+          file_name: selectedFile ? selectedFile.name : null,
+          // Note: file_url would need to be uploaded to Supabase Storage first
+          // For now, we'll leave it null
         });
 
       if (error) throw error;
@@ -1104,6 +1109,14 @@ const Dashboard = () => {
                         .update({
                           full_name: fullName,
                           email: profileData.email,
+                          username: profileData.username,
+                          mobile: profileData.mobile,
+                          country_code: profileData.countryCode,
+                          country: profileData.country,
+                          address: profileData.address,
+                          state: profileData.state,
+                          zip_code: profileData.zipCode,
+                          city: profileData.city,
                         })
                         .eq('user_id', user.id);
                       
