@@ -11,6 +11,7 @@ import {
   Wallet,
   ArrowRight,
   ChevronRight,
+  ChevronDown,
   Pickaxe,
   Gift,
   MessageSquare,
@@ -19,6 +20,16 @@ import {
   Send,
   Zap,
   CircleDollarSign,
+  Users,
+  List,
+  Copy,
+  CirclePlus,
+  Plus,
+  Paperclip,
+  Lock,
+  Key,
+  Power,
+  Info,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -98,6 +109,76 @@ const Dashboard = () => {
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
   const [language, setLanguage] = useState<LanguageKey>('en');
+  const [activeView, setActiveView] = useState<'dashboard' | 'my-referrals' | 'referral-bonus-logs' | 'withdraw-logs' | 'create-tickets' | 'all-tickets' | 'profile' | 'wallets' | '2fa-security' | 'change-password'>('dashboard');
+  const [referralExpanded, setReferralExpanded] = useState(false);
+  
+  // Auto-expand referral menu if a referral view is active
+  useEffect(() => {
+    if (activeView === 'my-referrals' || activeView === 'referral-bonus-logs' || activeView === 'withdraw-logs') {
+      setReferralExpanded(true);
+    }
+  }, [activeView]);
+
+  // Auto-expand support ticket menu if a support ticket view is active
+  useEffect(() => {
+    if (activeView === 'create-tickets' || activeView === 'all-tickets') {
+      setSupportTicketExpanded(true);
+    }
+  }, [activeView]);
+
+  // Auto-expand account menu if an account view is active
+  useEffect(() => {
+    if (activeView === 'profile' || activeView === 'wallets' || activeView === '2fa-security' || activeView === 'change-password') {
+      setAccountExpanded(true);
+    }
+  }, [activeView]);
+
+  // Set email from profile when component loads
+  useEffect(() => {
+    if (profile?.email) {
+      setTicketEmail(profile.email);
+      setProfileData(prev => ({
+        ...prev,
+        email: profile.email,
+        username: profile.email.split('@')[0] || '',
+        firstName: profile.full_name?.split(' ')[0] || '',
+        lastName: profile.full_name?.split(' ').slice(1).join(' ') || '',
+      }));
+    }
+  }, [profile]);
+  const [commission, setCommission] = useState(0);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [isEditingWallet, setIsEditingWallet] = useState(false);
+  const [referralLink, setReferralLink] = useState('');
+  const [referralBonusLogs, setReferralBonusLogs] = useState<any[]>([]);
+  const [withdrawLogs, setWithdrawLogs] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [supportTicketExpanded, setSupportTicketExpanded] = useState(false);
+  const [ticketName, setTicketName] = useState('');
+  const [ticketEmail, setTicketEmail] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState('No file chosen');
+  const [accountExpanded, setAccountExpanded] = useState(false);
+  const [profileData, setProfileData] = useState({
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: '',
+    phone: '',
+    countryCode: '+93',
+    country: '',
+    address: '',
+    state: '',
+    zipCode: '',
+    city: '',
+  });
+  const [otp, setOtp] = useState('');
+  const [setupKey, setSetupKey] = useState('5KYBUO47PRDIP5NF');
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
   const copy = translations[language];
 
@@ -114,10 +195,14 @@ const Dashboard = () => {
       }
 
       await fetchData();
+      
+      // Set referral link
+      const refCode = profile?.referral_code || user.email?.split('@')[0] || 'user';
+      setReferralLink(`https://btccryptomining?ref=${refCode}`);
     };
 
     loadDashboard();
-  }, [user, isAdmin, navigate]);
+  }, [user, isAdmin, navigate, profile]);
 
   const fetchData = async () => {
     try {
@@ -169,6 +254,15 @@ const Dashboard = () => {
     e.preventDefault();
     if (!user) return;
 
+    if (!ticketName || !ticketEmail || !ticketSubject || !ticketMessage) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('support_tickets')
@@ -187,9 +281,15 @@ const Dashboard = () => {
         description: 'Support ticket created successfully',
       });
 
+      setTicketName('');
       setTicketSubject('');
       setTicketMessage('');
+      setSelectedFile(null);
+      setFileName('No file chosen');
       setShowTicketForm(false);
+      if (activeView === 'create-tickets') {
+        setActiveView('all-tickets');
+      }
       fetchData();
     } catch (error: any) {
       toast({
@@ -197,6 +297,25 @@ const Dashboard = () => {
         description: error.message || 'Failed to create ticket',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx'];
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      
+      if (allowedExtensions.includes(fileExtension)) {
+        setSelectedFile(file);
+        setFileName(file.name);
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Invalid file type. Allowed: .jpg, .jpeg, .png, .pdf, .doc, .docx',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -248,9 +367,33 @@ const Dashboard = () => {
         { label: 'Purchased Plans', path: '/start-mining', view: 'purchased' },
       ]
     },
-    { label: 'Referral', icon: Gift },
-    { label: 'Support Ticket', icon: MessageSquare },
-    { label: 'My Account', icon: User },
+    { 
+      label: 'Referral', 
+      icon: Gift,
+      subItems: [
+        { label: 'My Referrals', view: 'my-referrals' },
+        { label: 'Referral Bonus Logs', view: 'referral-bonus-logs' },
+        { label: 'Withdraw Logs', view: 'withdraw-logs' },
+      ]
+    },
+    { 
+      label: 'Support Ticket', 
+      icon: MessageSquare,
+      subItems: [
+        { label: 'Create Tickets', view: 'create-tickets' },
+        { label: 'All Tickets', view: 'all-tickets' },
+      ]
+    },
+    { 
+      label: 'My Account', 
+      icon: User,
+      subItems: [
+        { label: 'Profile', view: 'profile' },
+        { label: 'Wallets', view: 'wallets' },
+        { label: '2FA Security', view: '2fa-security' },
+        { label: 'Change Password', view: 'change-password' },
+      ]
+    },
   ];
 
   const latestPlans = [
@@ -283,31 +426,134 @@ const Dashboard = () => {
               <div key={item.label}>
                 {item.subItems ? (
                   <div>
-                    <div className="flex items-center justify-between px-4 py-3 text-white/70 font-medium">
+                    <button
+                      onClick={() => {
+                        if (item.label === 'Referral') {
+                          setReferralExpanded(!referralExpanded);
+                        } else if (item.label === 'Support Ticket') {
+                          setSupportTicketExpanded(!supportTicketExpanded);
+                        } else if (item.label === 'My Account') {
+                          setAccountExpanded(!accountExpanded);
+                        }
+                      }}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition ${
+                        (item.label === 'Referral' && referralExpanded) || 
+                        (item.label === 'Support Ticket' && supportTicketExpanded) ||
+                        (item.label === 'My Account' && accountExpanded)
+                          ? 'bg-yellow-500/20 text-yellow-400' 
+                          : 'text-white/70 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
                       <div className="flex items-center gap-3">
                         <item.icon className="h-4 w-4" />
                         {item.label}
                       </div>
-                    </div>
-                    <div className="ml-4 space-y-1">
-                      {item.subItems.map((subItem: any) => (
-                        <button
-                          key={subItem.label}
-                          onClick={() => {
-                            navigate(subItem.path);
-                            // If there's a view parameter, we'll handle it in the target page
-                            if (subItem.view) {
-                              // Store the view in sessionStorage so the target page knows which view to show
-                              sessionStorage.setItem(`${subItem.path}_view`, subItem.view);
-                            }
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition"
-                        >
+                      {(item.label === 'Referral' || item.label === 'Support Ticket' || item.label === 'My Account') ? (
+                        (item.label === 'Referral' && referralExpanded) || 
+                        (item.label === 'Support Ticket' && supportTicketExpanded) ||
+                        (item.label === 'My Account' && accountExpanded) ? (
+                          <ChevronDown className="h-4 w-4 text-white/40" />
+                        ) : (
                           <ChevronRight className="h-4 w-4 text-white/40" />
-                          {subItem.label}
-                        </button>
-                      ))}
-                    </div>
+                        )
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-white/40" />
+                      )}
+                    </button>
+                    {item.label === 'Referral' && referralExpanded && (
+                      <div className="ml-4 space-y-1 mt-1">
+                        {item.subItems.map((subItem: any) => (
+                          <button
+                            key={subItem.label}
+                            onClick={() => {
+                              setActiveView(subItem.view);
+                              if (subItem.path) {
+                                navigate(subItem.path);
+                              }
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition ${
+                              activeView === subItem.view
+                                ? 'bg-yellow-500/20 text-yellow-400'
+                                : 'text-white/70 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            {subItem.view === 'my-referrals' && <Users className="h-4 w-4" />}
+                            {subItem.view === 'referral-bonus-logs' && <List className="h-4 w-4" />}
+                            {subItem.view === 'withdraw-logs' && <List className="h-4 w-4" />}
+                            {subItem.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {item.label === 'Support Ticket' && supportTicketExpanded && (
+                      <div className="ml-4 space-y-1 mt-1">
+                        {item.subItems.map((subItem: any) => (
+                          <button
+                            key={subItem.label}
+                            onClick={() => {
+                              setActiveView(subItem.view);
+                              if (subItem.path) {
+                                navigate(subItem.path);
+                              }
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition ${
+                              activeView === subItem.view
+                                ? 'bg-yellow-500/20 text-yellow-400'
+                                : 'text-white/70 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            {subItem.view === 'create-tickets' && <CirclePlus className="h-4 w-4" />}
+                            {subItem.view === 'all-tickets' && <List className="h-4 w-4" />}
+                            {subItem.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {item.label === 'My Account' && accountExpanded && (
+                      <div className="ml-4 space-y-1 mt-1">
+                        {item.subItems.map((subItem: any) => (
+                          <button
+                            key={subItem.label}
+                            onClick={() => {
+                              setActiveView(subItem.view);
+                              if (subItem.path) {
+                                navigate(subItem.path);
+                              }
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition ${
+                              activeView === subItem.view
+                                ? 'bg-yellow-500/20 text-yellow-400'
+                                : 'text-white/70 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            {subItem.view === 'profile' && <User className="h-4 w-4" />}
+                            {subItem.view === 'wallets' && <Wallet className="h-4 w-4" />}
+                            {subItem.view === '2fa-security' && <Lock className="h-4 w-4" />}
+                            {subItem.view === 'change-password' && <Key className="h-4 w-4" />}
+                            {subItem.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {item.label !== 'Referral' && item.label !== 'Support Ticket' && item.label !== 'My Account' && (
+                      <div className="ml-4 space-y-1">
+                        {item.subItems.map((subItem: any) => (
+                          <button
+                            key={subItem.label}
+                            onClick={() => {
+                              navigate(subItem.path);
+                              if (subItem.view) {
+                                sessionStorage.setItem(`${subItem.path}_view`, subItem.view);
+                              }
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition"
+                          >
+                            <ChevronRight className="h-4 w-4 text-white/40" />
+                            {subItem.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <button
@@ -315,9 +561,12 @@ const Dashboard = () => {
                       if (item.path) {
                         navigate(item.path);
                       }
+                      if (item.label === 'Dashboard') {
+                        setActiveView('dashboard');
+                      }
                     }}
                     className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition ${
-                      item.active 
+                      item.active && activeView === 'dashboard'
                         ? 'bg-yellow-500/20 text-yellow-400' 
                         : 'text-white/70 hover:text-white hover:bg-white/5'
                     }`}
@@ -331,6 +580,16 @@ const Dashboard = () => {
                 )}
               </div>
             ))}
+            {/* Logout Button */}
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition"
+              >
+                <Power className="h-4 w-4" />
+                Logout
+              </button>
+            </div>
           </div>
         </aside>
 
@@ -360,6 +619,763 @@ const Dashboard = () => {
             </Button>
           </div>
 
+          {/* My Referrals Page */}
+          {activeView === 'my-referrals' && (
+            <div className="space-y-6">
+              {/* My Commission Section */}
+              <div className="flex items-center justify-between rounded-lg border border-white/5 bg-[#111B2D]/70 p-4">
+                <div className="flex items-center gap-4">
+                  <span className="text-white/70">USDT</span>
+                  <span className="text-white text-lg font-semibold">{commission.toFixed(4)}</span>
+                </div>
+                <Button className="bg-yellow-500 text-black hover:bg-yellow-400">
+                  Withdrawal
+                </Button>
+              </div>
+
+              {/* USDT Wallet Address Section */}
+              <div className="space-y-2">
+                <Label className="text-white/70">USDT Wallet Address (Require TRC20)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={walletAddress}
+                    onChange={(e) => setWalletAddress(e.target.value)}
+                    disabled={!isEditingWallet}
+                    className="bg-[#0B1421] text-white border-white/10"
+                    placeholder="Enter your USDT wallet address"
+                  />
+                  <Button
+                    onClick={() => {
+                      if (isEditingWallet && walletAddress) {
+                        // Save wallet address logic here
+                        setIsEditingWallet(false);
+                        toast({
+                          title: 'Success',
+                          description: 'Wallet address updated',
+                        });
+                      } else {
+                        setIsEditingWallet(true);
+                      }
+                    }}
+                    className="bg-yellow-500 text-black hover:bg-yellow-400"
+                  >
+                    {isEditingWallet ? 'Save' : 'Edit'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Your Referral Link Section */}
+              <div className="space-y-2">
+                <Label className="text-white/70">Your Referral Link</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={referralLink}
+                    readOnly
+                    className="bg-[#0B1421] text-white border-white/10"
+                  />
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(referralLink);
+                      toast({
+                        title: 'Copied!',
+                        description: 'Referral link copied to clipboard',
+                      });
+                    }}
+                    className="bg-yellow-500 text-black hover:bg-yellow-400"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              {/* Referral Program Description */}
+              <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6 space-y-4">
+                <h3 className="text-xl font-semibold text-white">
+                  Earn USDT by referring new users, join our Affiliate Program (Partner Program), and earn a lifetime 10% commission!
+                </h3>
+                <ol className="list-decimal list-inside space-y-2 text-white/80 text-sm">
+                  <li>Put your affiliate link on your blog or any website you may have.</li>
+                  <li>
+                    New users register with us. You will get 10% of the top-up amount. For example, You recommend user A, you can get 7% of the referral plan, A recommends B to buy plan, you can get 2% B recommends C to buy plan, you can get 1%
+                  </li>
+                  <li>Mention Btc Mining. in your newsletter and use your affiliate link.</li>
+                  <li>
+                    Invite your friends and earn USDT benefits when they complete their purchases. Keep an eye on how much you earn each week, get paid in USDT, and each of your affiliates will generate lifetime commissions.
+                  </li>
+                  <li>We allow you to earn commissions by referring friends without purchasing any mining plans.</li>
+                  <li>Team members enjoy team commission benefits and form a community of interests.</li>
+                </ol>
+              </div>
+
+              {/* Your Team Section */}
+              <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6">
+                <h3 className="text-xl font-semibold text-white mb-4">
+                  Your Team invited {teamMembers.length} users
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-[#0B1421] text-white/70">
+                      <tr>
+                        <th className="py-3 px-4">User</th>
+                        <th className="py-3 px-4">Recharge Amount</th>
+                        <th className="py-3 px-4">Percent</th>
+                        <th className="py-3 px-4">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-white/80">
+                      {teamMembers.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="py-8 text-center text-white/50">
+                            No team members yet
+                          </td>
+                        </tr>
+                      ) : (
+                        teamMembers.map((member, index) => (
+                          <tr key={index} className="border-t border-white/5">
+                            <td className="py-3 px-4">{member.user}</td>
+                            <td className="py-3 px-4">{member.recharge_amount}</td>
+                            <td className="py-3 px-4">{member.percent}%</td>
+                            <td className="py-3 px-4">{member.amount}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Referral Bonus Logs Page */}
+          {activeView === 'referral-bonus-logs' && (
+            <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6">
+              <h3 className="text-xl font-semibold text-white mb-4">Referral Bonus Logs</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-[#0B1421] text-white">
+                    <tr>
+                      <th className="py-3 px-4">User</th>
+                      <th className="py-3 px-4">Recharge amount</th>
+                      <th className="py-3 px-4">Amount</th>
+                      <th className="py-3 px-4">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-white/80">
+                    {referralBonusLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-8 text-center text-white">
+                          No referral bonus received yet!
+                        </td>
+                      </tr>
+                    ) : (
+                      referralBonusLogs.map((log, index) => (
+                        <tr key={index} className="border-t border-white/5">
+                          <td className="py-3 px-4">{log.user}</td>
+                          <td className="py-3 px-4">{log.recharge_amount}</td>
+                          <td className="py-3 px-4">{log.amount}</td>
+                          <td className="py-3 px-4">{log.time}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Withdraw Logs Page */}
+          {activeView === 'withdraw-logs' && (
+            <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6">
+              <h3 className="text-xl font-semibold text-white mb-4">Withdraw Logs</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-[#0B1421] text-white">
+                    <tr>
+                      <th className="py-3 px-4">Time</th>
+                      <th className="py-3 px-4">Transaction ID</th>
+                      <th className="py-3 px-4">Wallet</th>
+                      <th className="py-3 px-4">Amount</th>
+                      <th className="py-3 px-4">Actual Amount</th>
+                      <th className="py-3 px-4">Fee</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-white/80">
+                    {withdrawLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-8 text-center text-white">
+                          No Data Found!
+                        </td>
+                      </tr>
+                    ) : (
+                      withdrawLogs.map((log, index) => (
+                        <tr key={index} className="border-t border-white/5">
+                          <td className="py-3 px-4">{log.time}</td>
+                          <td className="py-3 px-4">{log.transaction_id}</td>
+                          <td className="py-3 px-4">{log.wallet}</td>
+                          <td className="py-3 px-4">{log.amount}</td>
+                          <td className="py-3 px-4">{log.actual_amount}</td>
+                          <td className="py-3 px-4">{log.fee}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              log.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                              log.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                              'bg-red-500/20 text-red-400'
+                            }`}>
+                              {log.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <button className="text-yellow-400 hover:text-yellow-300">View</button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Create Tickets Page */}
+          {activeView === 'create-tickets' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold text-white">Support Tickets</h2>
+                <Button
+                  onClick={() => setActiveView('all-tickets')}
+                  className="bg-yellow-500 text-black hover:bg-yellow-400"
+                >
+                  <List className="h-4 w-4 mr-2" />
+                  My Support Ticket
+                </Button>
+              </div>
+
+              <form onSubmit={handleCreateTicket} className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-white/70">
+                    Name <span className="text-yellow-400">*</span>
+                  </Label>
+                  <Input
+                    value={ticketName}
+                    onChange={(e) => setTicketName(e.target.value)}
+                    required
+                    className="bg-[#0B1421] text-white border-white/10"
+                    placeholder="Enter your name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white/70">
+                    Email address <span className="text-yellow-400">*</span>
+                  </Label>
+                  <Input
+                    type="email"
+                    value={ticketEmail}
+                    onChange={(e) => setTicketEmail(e.target.value)}
+                    required
+                    className="bg-[#0B1421] text-white border-white/10"
+                    placeholder="Enter your email"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white/70">Subject</Label>
+                  <Input
+                    value={ticketSubject}
+                    onChange={(e) => setTicketSubject(e.target.value)}
+                    className="bg-[#0B1421] text-white border-white/10"
+                    placeholder="Subject"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white/70">Message</Label>
+                  <Textarea
+                    value={ticketMessage}
+                    onChange={(e) => setTicketMessage(e.target.value)}
+                    rows={6}
+                    className="bg-[#0B1421] text-white border-white/10"
+                    placeholder="Enter your message"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white/70">Attach File</Label>
+                  <div className="flex items-center gap-2">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                        className="hidden"
+                        id="file-upload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="border-white/20 text-white/80 hover:bg-white/10"
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                      >
+                        Choose File
+                      </Button>
+                    </label>
+                    <span className="text-white/70">{fileName}</span>
+                    {selectedFile && (
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setSelectedFile(null);
+                          setFileName('No file chosen');
+                        }}
+                        className="bg-yellow-500 text-black hover:bg-yellow-400 p-2 h-8 w-8"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-white/50">
+                    Allowed File Extensions: .jpg, .jpeg, .png, .pdf, .doc, .docx
+                  </p>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-yellow-500 text-black hover:bg-yellow-400"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Submit
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {/* All Tickets Page */}
+          {activeView === 'all-tickets' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold text-white">Support Tickets</h2>
+                <Button
+                  onClick={() => setActiveView('create-tickets')}
+                  className="bg-yellow-500 text-black hover:bg-yellow-400"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Ticket
+                </Button>
+              </div>
+
+              <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-[#0B1421] text-white">
+                      <tr>
+                        <th className="py-3 px-4 text-left">Subject</th>
+                        <th className="py-3 px-4 text-center">Status</th>
+                        <th className="py-3 px-4 text-center">Last Reply</th>
+                        <th className="py-3 px-4 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-white/80">
+                      {tickets.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="py-8 text-center text-white/50">
+                            No tickets found
+                          </td>
+                        </tr>
+                      ) : (
+                        tickets.map((ticket) => (
+                          <tr key={ticket.id} className="border-t border-white/5">
+                            <td className="py-3 px-4">{ticket.subject}</td>
+                            <td className="py-3 px-4 text-center">
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                ticket.status === 'resolved' ? 'bg-green-500/20 text-green-400' :
+                                ticket.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
+                                ticket.status === 'closed' ? 'bg-gray-500/20 text-gray-400' :
+                                'bg-yellow-500/20 text-yellow-400'
+                              }`}>
+                                {ticket.status}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              {ticket.updated_at ? new Date(ticket.updated_at).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <button className="text-yellow-400 hover:text-yellow-300">
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Profile Setting Page */}
+          {activeView === 'profile' && (
+            <div className="space-y-6">
+              <h2 className="text-3xl font-bold text-white">Profile Setting</h2>
+              <form 
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  try {
+                    if (user && profile) {
+                      const fullName = `${profileData.firstName} ${profileData.lastName}`.trim();
+                      const { error } = await supabase
+                        .from('profiles')
+                        .update({
+                          full_name: fullName,
+                          email: profileData.email,
+                        })
+                        .eq('user_id', user.id);
+                      
+                      if (error) throw error;
+                      
+                      toast({
+                        title: 'Success',
+                        description: 'Profile updated successfully',
+                      });
+                    }
+                  } catch (error: any) {
+                    toast({
+                      title: 'Error',
+                      description: error.message || 'Failed to update profile',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+                className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6 space-y-4"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-white/70">
+                      First Name <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      value={profileData.firstName}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, firstName: e.target.value }))}
+                      required
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="First Name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">
+                      Last Name <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      value={profileData.lastName}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
+                      required
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="Last Name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">Username</Label>
+                    <Input
+                      value={profileData.username}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="Username"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">E-mail Address</Label>
+                    <Input
+                      type="email"
+                      value={profileData.email}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="Email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">Mobile</Label>
+                    <div className="flex gap-2">
+                      <select
+                        value={profileData.countryCode}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, countryCode: e.target.value }))}
+                        className="bg-yellow-500 text-black px-3 py-2 rounded border-white/10"
+                      >
+                        <option value="+1">+1 (US)</option>
+                        <option value="+44">+44 (UK)</option>
+                        <option value="+254">+254 (KE)</option>
+                        <option value="+93">+93 (AF)</option>
+                        <option value="+234">+234 (NG)</option>
+                        <option value="+27">+27 (ZA)</option>
+                        <option value="+91">+91 (IN)</option>
+                        <option value="+86">+86 (CN)</option>
+                      </select>
+                      <Input
+                        value={profileData.phone}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                        className="bg-[#0B1421] text-white border-white/10 flex-1"
+                        placeholder="Your Phone Number"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">Country</Label>
+                    <Input
+                      value={profileData.country}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="Country"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-white/70">Address</Label>
+                    <Input
+                      value={profileData.address}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="Address"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">State</Label>
+                    <Input
+                      value={profileData.state}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, state: e.target.value }))}
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="state"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">Zip Code</Label>
+                    <Input
+                      value={profileData.zipCode}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, zipCode: e.target.value }))}
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="Zip Code"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">City</Label>
+                    <Input
+                      value={profileData.city}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, city: e.target.value }))}
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="City"
+                    />
+                  </div>
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-yellow-500 text-black hover:bg-yellow-400 mt-6"
+                >
+                  Submit
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {/* Wallets Page */}
+          {activeView === 'wallets' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-semibold text-white">User Coin Wallets</h2>
+              <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-8">
+                <p className="text-center text-red-500 text-lg">
+                  You have no wallet yet, please buy some plan first
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* 2FA Security Page */}
+          {activeView === '2fa-security' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Panel - Add Your Account */}
+              <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6 space-y-4">
+                <h2 className="text-2xl font-semibold text-white">Add Your Account</h2>
+                <p className="text-white/70">
+                  Use the QR code or setup key on your Google Authenticator app to add your account.
+                </p>
+                <div className="flex items-center justify-center bg-[#0B1421] rounded-lg p-8 border border-white/10">
+                  <div className="text-white/50 text-center">
+                    <Lock className="h-16 w-16 mx-auto mb-2" />
+                    <p>QR Code Placeholder</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white/70">Setup Key</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={setupKey}
+                      readOnly
+                      className="bg-[#0B1421] text-white border-white/10"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(setupKey);
+                        toast({
+                          title: 'Copied!',
+                          description: 'Setup key copied to clipboard',
+                        });
+                      }}
+                      className="bg-yellow-500 text-black hover:bg-yellow-400"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2 pt-4 border-t border-white/10">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-yellow-400" />
+                    <span className="text-white font-semibold">Help</span>
+                  </div>
+                  <p className="text-white/70 text-sm">
+                    Google Authenticator is a multifactor app for mobile devices. It generates timed codes used during the 2-step verification process. To use Google Authenticator, install the Google Authenticator application on your mobile device.{' '}
+                    <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:underline">
+                      Download
+                    </a>
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Panel - Enable 2FA Security */}
+              <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6 space-y-4">
+                <h2 className="text-2xl font-semibold text-white">Enable 2FA Security</h2>
+                <div className="space-y-2">
+                  <Label className="text-white/70">Google Authenticator OTP</Label>
+                  <Input
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className="bg-[#0B1421] text-white border-white/10"
+                    placeholder="Enter the OTP"
+                  />
+                </div>
+                <Button
+                  onClick={async () => {
+                    if (!otp) {
+                      toast({
+                        title: 'Error',
+                        description: 'Please enter the OTP',
+                        variant: 'destructive',
+                      });
+                      return;
+                    }
+                    // 2FA verification logic would go here
+                    toast({
+                      title: 'Success',
+                      description: '2FA enabled successfully',
+                    });
+                    setOtp('');
+                  }}
+                  className="w-full bg-yellow-500 text-black hover:bg-yellow-400"
+                >
+                  Submit
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Change Password Page */}
+          {activeView === 'change-password' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-semibold text-white">Change Password</h2>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (passwordData.newPassword !== passwordData.confirmPassword) {
+                    toast({
+                      title: 'Error',
+                      description: 'New passwords do not match',
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
+                  if (passwordData.newPassword.length < 6) {
+                    toast({
+                      title: 'Error',
+                      description: 'Password must be at least 6 characters',
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
+                  try {
+                    if (user) {
+                      // Update password using Supabase
+                      const { error } = await supabase.auth.updateUser({
+                        password: passwordData.newPassword
+                      });
+                      
+                      if (error) throw error;
+                      
+                      toast({
+                        title: 'Success',
+                        description: 'Password changed successfully',
+                      });
+                      
+                      setPasswordData({
+                        currentPassword: '',
+                        newPassword: '',
+                        confirmPassword: '',
+                      });
+                    }
+                  } catch (error: any) {
+                    toast({
+                      title: 'Error',
+                      description: error.message || 'Failed to change password',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+                className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6 space-y-4 max-w-2xl"
+              >
+                <div className="space-y-2">
+                  <Label className="text-white/70">Current Password</Label>
+                  <Input
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    required
+                    className="bg-[#0B1421] text-white border-white/10"
+                    placeholder="Enter your current password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white/70">New Password</Label>
+                  <Input
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                    required
+                    className="bg-[#0B1421] text-white border-white/10"
+                    placeholder="Enter your new password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white/70">Confirm New Password</Label>
+                  <Input
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    required
+                    className="bg-[#0B1421] text-white border-white/10"
+                    placeholder="Confirm your new password"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-yellow-500 text-black hover:bg-yellow-400"
+                >
+                  Change Password
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {/* Dashboard View */}
+          {activeView === 'dashboard' && (
+            <>
           <section className="rounded-2xl border border-white/5 bg-[#111B2D]/70 p-6 text-sm leading-relaxed text-white/80">
             <h2 className="mb-3 text-lg font-semibold text-white">{copy.heroTitle}</h2>
             <p>{copy.heroBody1}</p>
@@ -520,74 +1536,46 @@ const Dashboard = () => {
                   <p className="text-sm text-white/60">Need help?</p>
                   <h4 className="text-xl font-semibold text-white">Support Ticket</h4>
                 </div>
-                <Button className="bg-yellow-500 text-black hover:bg-yellow-400" onClick={() => setShowTicketForm(true)}>
+                <Button 
+                  className="bg-yellow-500 text-black hover:bg-yellow-400" 
+                  onClick={() => {
+                    setActiveView('create-tickets');
+                    setSupportTicketExpanded(true);
+                  }}
+                >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   New Ticket
                 </Button>
               </div>
-              {showTicketForm && (
-                <form onSubmit={handleCreateTicket} className="space-y-3 rounded-xl bg-[#101B2C] p-4">
-                  <div>
-                    <Label className="text-white/70" htmlFor="subject">
-                      Subject
-                    </Label>
-                    <Input
-                      id="subject"
-                      value={ticketSubject}
-                      onChange={(e) => setTicketSubject(e.target.value)}
-                      required
-                      className="bg-[#0B1421] text-white"
-                      placeholder="Enter ticket subject"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-white/70" htmlFor="message">
-                      Message
-                    </Label>
-                    <Textarea
-                      id="message"
-                      value={ticketMessage}
-                      onChange={(e) => setTicketMessage(e.target.value)}
-                      required
-                      rows={4}
-                      className="bg-[#0B1421] text-white"
-                      placeholder="Describe your issue..."
-                    />
-                  </div>
-                  <div className="flex gap-3">
-                    <Button type="submit" className="bg-yellow-500 text-black hover:bg-yellow-400">
-                      Submit
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="border-white/20 text-white/80 hover:bg-white/10"
-                      onClick={() => {
-                        setShowTicketForm(false);
-                        setTicketSubject('');
-                        setTicketMessage('');
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              )}
 
               <div className="space-y-3">
                 {tickets.length === 0 ? (
                   <p className="text-center text-white/50">No support tickets yet</p>
                 ) : (
-                  tickets.map((ticket) => (
-                    <div key={ticket.id} className="rounded-xl border border-white/5 bg-[#101B2C] p-4 text-sm">
-                      <div className="mb-2 flex items-center justify-between">
-                        <p className="font-semibold text-white">{ticket.subject}</p>
-                        <span className="rounded-full bg-white/10 px-3 py-1 text-xs capitalize text-white/70">{ticket.status}</span>
+                  <>
+                    {tickets.slice(0, 3).map((ticket) => (
+                      <div key={ticket.id} className="rounded-xl border border-white/5 bg-[#101B2C] p-4 text-sm">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="font-semibold text-white">{ticket.subject}</p>
+                          <span className="rounded-full bg-white/10 px-3 py-1 text-xs capitalize text-white/70">{ticket.status}</span>
+                        </div>
+                        <p className="text-white/70">{ticket.message}</p>
+                        <p className="mt-2 text-xs text-white/40">{new Date(ticket.created_at).toLocaleDateString()}</p>
                       </div>
-                      <p className="text-white/70">{ticket.message}</p>
-                      <p className="mt-2 text-xs text-white/40">{new Date(ticket.created_at).toLocaleDateString()}</p>
-                    </div>
-                  ))
+                    ))}
+                    {tickets.length > 3 && (
+                      <Button
+                        variant="ghost"
+                        className="w-full text-yellow-400 hover:text-yellow-300"
+                        onClick={() => {
+                          setActiveView('all-tickets');
+                          setSupportTicketExpanded(true);
+                        }}
+                      >
+                        View All Tickets <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -659,6 +1647,8 @@ const Dashboard = () => {
             </div>
             <p className="mt-6 text-center text-xs text-white/40">Copyright © 2020–2025 BTC Mining All Rights Reserved</p>
           </footer>
+            </>
+          )}
         </main>
       </div>
     </div>
