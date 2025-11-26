@@ -49,7 +49,12 @@ interface SupportTicket {
   status: string;
   priority: string;
   created_at: string;
+  updated_at?: string;
   admin_response: string | null;
+  name?: string;
+  email?: string;
+  file_name?: string;
+  file_url?: string;
 }
 
 const translations = {
@@ -181,6 +186,10 @@ const Dashboard = () => {
     newPassword: '',
     confirmPassword: '',
   });
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [showTicketDetail, setShowTicketDetail] = useState(false);
+  const [ticketReply, setTicketReply] = useState('');
+  const [isReplying, setIsReplying] = useState(false);
 
   const copy = translations[language];
 
@@ -1113,7 +1122,13 @@ const Dashboard = () => {
                               {ticket.updated_at ? new Date(ticket.updated_at).toLocaleDateString() : 'N/A'}
                             </td>
                             <td className="py-3 px-4 text-right">
-                              <button className="text-yellow-400 hover:text-yellow-300">
+                              <button 
+                                onClick={() => {
+                                  setSelectedTicket(ticket);
+                                  setShowTicketDetail(true);
+                                }}
+                                className="text-yellow-400 hover:text-yellow-300 cursor-pointer"
+                              >
                                 View
                               </button>
                             </td>
@@ -1122,6 +1137,285 @@ const Dashboard = () => {
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Ticket Detail Modal */}
+          {showTicketDetail && selectedTicket && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-[#111B2D] rounded-lg border border-white/10 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="sticky top-0 bg-[#111B2D] border-b border-white/10 p-6 flex items-center justify-between">
+                  <h2 className="text-2xl font-semibold text-white">Ticket Details</h2>
+                  <button
+                    onClick={() => {
+                      setShowTicketDetail(false);
+                      setSelectedTicket(null);
+                    }}
+                    className="text-white/70 hover:text-white text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  {/* Ticket Header Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-white/60 text-sm">Subject</Label>
+                      <p className="text-white font-semibold mt-1">{selectedTicket.subject}</p>
+                    </div>
+                    <div>
+                      <Label className="text-white/60 text-sm">Status</Label>
+                      <div className="mt-1">
+                        <span className={`px-3 py-1 rounded text-xs inline-block ${
+                          selectedTicket.status === 'resolved' ? 'bg-green-500/20 text-green-400' :
+                          selectedTicket.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
+                          selectedTicket.status === 'closed' ? 'bg-gray-500/20 text-gray-400' :
+                          'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {selectedTicket.status}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-white/60 text-sm">Priority</Label>
+                      <p className="text-white mt-1 capitalize">{selectedTicket.priority}</p>
+                    </div>
+                    <div>
+                      <Label className="text-white/60 text-sm">Created</Label>
+                      <p className="text-white mt-1">
+                        {selectedTicket.created_at ? new Date(selectedTicket.created_at).toLocaleString() : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Conversation History */}
+                  <div className="border-t border-white/10 pt-4 space-y-4">
+                    {(() => {
+                      // Parse message to extract original and replies
+                      const messageParts = selectedTicket.message.split('--- User Reply (');
+                      const initialMessage = messageParts[0].trim();
+                      const replies = messageParts.slice(1).map(part => {
+                        const [timestamp, ...replyParts] = part.split(') ---\n');
+                        return {
+                          timestamp: timestamp.trim(),
+                          message: replyParts.join(') ---\n').trim()
+                        };
+                      });
+
+                      return (
+                        <>
+                          {/* Original Message */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                                <User className="h-4 w-4 text-yellow-400" />
+                              </div>
+                              <div>
+                                <p className="text-white font-semibold">{(selectedTicket as any).name || 'You'}</p>
+                                <p className="text-white/60 text-xs">
+                                  {selectedTicket.created_at ? new Date(selectedTicket.created_at).toLocaleString() : ''}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="bg-[#0B1421] rounded-lg p-4 border border-white/5">
+                              <p className="text-white whitespace-pre-wrap">{initialMessage}</p>
+                            </div>
+                          </div>
+
+                          {/* User Replies */}
+                          {replies.map((reply, index) => (
+                            <div key={index}>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                                  <User className="h-4 w-4 text-yellow-400" />
+                                </div>
+                                <div>
+                                  <p className="text-white font-semibold">You</p>
+                                  <p className="text-white/60 text-xs">{reply.timestamp}</p>
+                                </div>
+                              </div>
+                              <div className="bg-[#0B1421] rounded-lg p-4 border border-white/5">
+                                <p className="text-white whitespace-pre-wrap">{reply.message}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Admin Response */}
+                  {selectedTicket.admin_response && (
+                    <div className="border-t border-white/10 pt-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                          <Headphones className="h-4 w-4 text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-white font-semibold">Support Team</p>
+                          <p className="text-white/60 text-xs">
+                            {selectedTicket.updated_at ? new Date(selectedTicket.updated_at).toLocaleString() : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="bg-[#0B1421] rounded-lg p-4 border border-blue-500/20">
+                        <p className="text-white whitespace-pre-wrap">{selectedTicket.admin_response}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Response Message */}
+                  {!selectedTicket.admin_response && (
+                    <div className="border-t border-white/10 pt-4">
+                      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-center">
+                        <p className="text-yellow-400 text-sm">
+                          <Headphones className="h-4 w-4 inline mr-2" />
+                          Waiting for support team response...
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* File Attachment Info */}
+                  {(selectedTicket as any).file_name && (
+                    <div className="border-t border-white/10 pt-4">
+                      <Label className="text-white/60 text-sm">Attachment</Label>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Paperclip className="h-4 w-4 text-white/60" />
+                        <p className="text-white">{(selectedTicket as any).file_name}</p>
+                        {(selectedTicket as any).file_url && (
+                          <a
+                            href={(selectedTicket as any).file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-yellow-400 hover:text-yellow-300 text-sm ml-auto"
+                          >
+                            Download
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reply Section */}
+                  {selectedTicket.status !== 'closed' && (
+                    <div className="border-t border-white/10 pt-4">
+                      <Label className="text-white/70 mb-2 block">Reply to Support</Label>
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          if (!ticketReply.trim() || !user || !selectedTicket) return;
+
+                          setIsReplying(true);
+                          try {
+                            // Append user reply to the message field with timestamp
+                            const timestamp = new Date().toLocaleString();
+                            const newReply = `\n\n--- User Reply (${timestamp}) ---\n${ticketReply}`;
+                            const updatedMessage = selectedTicket.message + newReply;
+
+                            const { error } = await supabase
+                              .from('support_tickets')
+                              .update({
+                                message: updatedMessage,
+                                updated_at: new Date().toISOString(),
+                              })
+                              .eq('id', selectedTicket.id);
+
+                            if (error) throw error;
+
+                            toast({
+                              title: 'Success',
+                              description: 'Your reply has been sent',
+                            });
+
+                            // Refresh ticket data
+                            const { data: updatedTicket } = await supabase
+                              .from('support_tickets')
+                              .select('*')
+                              .eq('id', selectedTicket.id)
+                              .single();
+
+                            if (updatedTicket) {
+                              setSelectedTicket(updatedTicket as SupportTicket);
+                            }
+
+                            // Refresh tickets list
+                            fetchData();
+
+                            setTicketReply('');
+                          } catch (error: any) {
+                            console.error('Error sending reply:', error);
+                            toast({
+                              title: 'Error',
+                              description: error.message || 'Failed to send reply',
+                              variant: 'destructive',
+                            });
+                          } finally {
+                            setIsReplying(false);
+                          }
+                        }}
+                        className="space-y-3"
+                      >
+                        <Textarea
+                          value={ticketReply}
+                          onChange={(e) => setTicketReply(e.target.value)}
+                          placeholder="Type your reply here..."
+                          className="bg-[#0B1421] text-white border-white/10 min-h-[100px]"
+                          required
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setShowTicketDetail(false);
+                              setSelectedTicket(null);
+                              setTicketReply('');
+                            }}
+                            className="border-white/10 text-white hover:bg-white/10"
+                          >
+                            Close
+                          </Button>
+                          <Button
+                            type="submit"
+                            disabled={isReplying || !ticketReply.trim()}
+                            className="bg-yellow-500 text-black hover:bg-yellow-400 disabled:opacity-50"
+                          >
+                            {isReplying ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2 inline-block"></div>
+                                Sending...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="h-4 w-4 mr-2" />
+                                Send Reply
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* Close Button (only show if ticket is closed) */}
+                  {selectedTicket.status === 'closed' && (
+                    <div className="border-t border-white/10 pt-4 flex justify-end">
+                      <Button
+                        onClick={() => {
+                          setShowTicketDetail(false);
+                          setSelectedTicket(null);
+                          setTicketReply('');
+                        }}
+                        className="bg-yellow-500 text-black hover:bg-yellow-400"
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
