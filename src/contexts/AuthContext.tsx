@@ -32,14 +32,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session without blocking
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false); // Set loading to false immediately
       if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setLoading(false);
+        // Fetch profile in background - don't block
+        fetchProfile(session.user.id).catch(console.error);
       }
     });
 
@@ -49,11 +49,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false); // Set loading to false immediately
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        // Fetch profile in background - don't block
+        fetchProfile(session.user.id).catch(console.error);
       } else {
         setProfile(null);
-        setLoading(false);
       }
     });
 
@@ -64,14 +65,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log('[AuthContext] Fetching profile for user:', userId);
       
-      // Add timeout to prevent infinite loading
+      // Add timeout to prevent infinite loading (reduced to 3 seconds)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
       );
 
+      // Optimize query - only select needed fields
       const fetchPromise = supabase
         .from('profiles')
-        .select('*')
+        .select('id, user_id, email, full_name, role, referral_code, username, mobile, country, address, state, zip_code, city, usdt_wallet_address, two_fa_enabled, created_at, updated_at')
         .eq('user_id', userId)
         .single();
 
@@ -167,22 +169,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data.user) {
-        console.log('[AuthContext] Sign in successful, fetching profile...');
-        // Fetch profile, but set a timeout to ensure we don't hang forever
-        const profileTimeout = setTimeout(() => {
-          console.warn('[AuthContext] Profile fetch taking too long, setting loading to false');
-          setLoading(false);
-        }, 5000);
+        console.log('[AuthContext] Sign in successful');
+        // Set user immediately - don't wait for profile
+        setUser(data.user);
+        setLoading(false);
         
-        try {
-          await fetchProfile(data.user.id);
-          clearTimeout(profileTimeout);
-        } catch (profileError) {
-          clearTimeout(profileTimeout);
+        // Fetch profile in background - don't block
+        fetchProfile(data.user.id).catch((profileError) => {
           console.warn('[AuthContext] Profile fetch error, continuing anyway:', profileError);
-          setLoading(false);
           setProfile(null);
-        }
+        });
       } else {
         console.warn('[AuthContext] Sign in succeeded but no user data');
         setLoading(false);

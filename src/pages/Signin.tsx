@@ -26,37 +26,21 @@ const SignIn = () => {
   useEffect(() => {
     if (user && !redirectedRef.current) {
       redirectedRef.current = true;
+      setIsLoading(false);
 
-      // If auth is still loading, wait a bit, but don't wait forever
-      if (authLoading) {
-        // Set a timeout to redirect even if loading takes too long
-        const timeout = setTimeout(() => {
-          if (authLoading) {
-            console.log('[SignIn] Auth loading timeout - redirecting anyway');
-            navigate('/dashboard', { replace: true });
-            setIsLoading(false);
-          }
-        }, 3000);
-        return () => clearTimeout(timeout);
-      }
-
-      // Small delay to ensure state is consistent
+      // Redirect immediately - don't wait for profile
+      // Profile will load in background, dashboard will handle admin redirect
       const timer = setTimeout(() => {
-        // Navigate based on role if profile exists, otherwise go to dashboard
-        if (profile && isAdmin) {
-          navigate('/admin', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
-        setIsLoading(false);
-      }, 300); // Short delay to allow profile fetch
+        console.log('[SignIn] Redirecting to dashboard, user:', user.email);
+        navigate('/dashboard', { replace: true });
+      }, 50); // Very short delay just to ensure state is set
 
       return () => clearTimeout(timer);
     } else if (!user && !authLoading && redirectedRef.current) {
       // Reset redirect flag if user logs out
       redirectedRef.current = false;
     }
-  }, [user, profile, isAdmin, authLoading, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -91,8 +75,15 @@ const SignIn = () => {
     try {
       await signIn(formData.email.trim().toLowerCase(), formData.password);
 
-      // Sign in succeeded - the useEffect will handle navigation
-      // Don't set isLoading to false here - let the useEffect handle redirect
+      // Sign in succeeded - redirect immediately as backup
+      // The useEffect will also handle it, but this ensures it happens
+      console.log('[SignIn] Sign in successful, redirecting to dashboard');
+      setIsLoading(false);
+      
+      // Small delay to ensure user state is set, then redirect
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 200);
 
     } catch (error: any) {
       console.error('Sign in error:', error);

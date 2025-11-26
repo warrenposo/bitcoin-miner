@@ -187,24 +187,51 @@ const Dashboard = () => {
   useEffect(() => {
     const loadDashboard = async () => {
       if (!user) {
-        setLoading(false);
+        navigate('/signin', { replace: true });
         return;
       }
 
-      if (isAdmin) {
+      // Check if user is admin (check profile or email as fallback)
+      const userIsAdmin = profile?.role === 'admin' || user.email?.toLowerCase() === 'warrenokumu98@gmail.com';
+      
+      if (userIsAdmin && profile?.role === 'admin') {
+        // Only redirect if we're sure they're admin (profile loaded)
+        console.log('[Dashboard] User is admin, redirecting to admin dashboard');
         navigate('/admin', { replace: true });
         return;
       }
 
-      await fetchData();
+      // If profile not loaded yet but user might be admin, wait a bit
+      if (!profile && user.email?.toLowerCase() === 'warrenokumu98@gmail.com') {
+        // Wait for profile to load, then redirect if admin
+        const checkAdminTimer = setTimeout(() => {
+          if (profile?.role === 'admin') {
+            console.log('[Dashboard] Profile loaded, user is admin, redirecting');
+            navigate('/admin', { replace: true });
+          }
+        }, 1000);
+        
+        // Start loading dashboard data while waiting
+        setLoading(true);
+        fetchData().catch(console.error);
+        
+        return () => clearTimeout(checkAdminTimer);
+      }
+
+      // Normal user - load dashboard immediately
+      setLoading(true);
+      fetchData().catch(console.error);
       
-      // Set referral link
-      const refCode = profile?.referral_code || user.email?.split('@')[0] || 'user';
-      setReferralLink(`https://btccryptomining?ref=${refCode}`);
+      // Set referral link (don't wait for profile)
+      if (profile?.referral_code) {
+        setReferralLink(`https://btccryptomining?ref=${profile.referral_code}`);
+      } else if (user.email) {
+        setReferralLink(`https://btccryptomining?ref=${user.email.split('@')[0]}`);
+      }
     };
 
     loadDashboard();
-  }, [user, isAdmin, navigate, profile]);
+  }, [user, profile, navigate]);
 
   const fetchData = async () => {
     try {
@@ -233,13 +260,19 @@ const Dashboard = () => {
       }
 
       // Fetch support tickets
-      const { data: userTickets } = await supabase
+      const { data: userTickets, error: ticketsError } = await supabase
         .from('support_tickets')
         .select('*')
         .eq('user_id', user!.id)
         .order('created_at', { ascending: false });
 
-      if (userTickets) setTickets(userTickets);
+      if (ticketsError) {
+        console.error('Error fetching tickets:', ticketsError);
+        // Don't show error toast, just log it
+        setTickets([]);
+      } else {
+        setTickets(userTickets || []);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
