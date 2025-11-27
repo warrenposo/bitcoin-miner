@@ -77,12 +77,15 @@ CREATE TABLE IF NOT EXISTS deposits (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   transaction_id TEXT UNIQUE NOT NULL,
-  gateway TEXT NOT NULL CHECK (gateway IN ('coinbase', 'paypal', 'stripe')),
+  gateway TEXT NOT NULL CHECK (gateway IN ('btc', 'usdt-trc20', 'usdt-erc20', 'usdc', 'eth', 'coinbase', 'paypal', 'stripe')),
   amount DECIMAL(18, 2) NOT NULL,
   charge DECIMAL(18, 2) DEFAULT 0,
   payable DECIMAL(18, 2) NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'cancelled')),
   deposit_address TEXT,
+  currency TEXT NOT NULL DEFAULT 'USD',
+  conversion_rate DECIMAL(18, 8),
+  crypto_amount DECIMAL(18, 8),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   completed_at TIMESTAMP WITH TIME ZONE
@@ -333,6 +336,11 @@ CREATE POLICY "Admins can update all stats"
   USING (public.is_admin(auth.uid()));
 
 -- Deposits policies
+DROP POLICY IF EXISTS "Users can view their own deposits" ON deposits;
+DROP POLICY IF EXISTS "Users can create deposits" ON deposits;
+DROP POLICY IF EXISTS "Admins can view all deposits" ON deposits;
+DROP POLICY IF EXISTS "Admins can update all deposits" ON deposits;
+
 CREATE POLICY "Users can view their own deposits"
   ON deposits FOR SELECT
   USING (auth.uid() = user_id);
@@ -350,6 +358,11 @@ CREATE POLICY "Admins can update all deposits"
   USING (public.is_admin(auth.uid()));
 
 -- Withdrawals policies
+DROP POLICY IF EXISTS "Users can view their own withdrawals" ON withdrawals;
+DROP POLICY IF EXISTS "Users can create withdrawals" ON withdrawals;
+DROP POLICY IF EXISTS "Admins can view all withdrawals" ON withdrawals;
+DROP POLICY IF EXISTS "Admins can update all withdrawals" ON withdrawals;
+
 CREATE POLICY "Users can view their own withdrawals"
   ON withdrawals FOR SELECT
   USING (auth.uid() = user_id);
@@ -367,6 +380,10 @@ CREATE POLICY "Admins can update all withdrawals"
   USING (public.is_admin(auth.uid()));
 
 -- Mining plans policies (public read, admin write)
+DROP POLICY IF EXISTS "Anyone can view active mining plans" ON mining_plans;
+DROP POLICY IF EXISTS "Admins can view all mining plans" ON mining_plans;
+DROP POLICY IF EXISTS "Admins can manage mining plans" ON mining_plans;
+
 CREATE POLICY "Anyone can view active mining plans"
   ON mining_plans FOR SELECT
   USING (is_active = TRUE);
@@ -380,6 +397,11 @@ CREATE POLICY "Admins can manage mining plans"
   USING (public.is_admin(auth.uid()));
 
 -- User plans policies
+DROP POLICY IF EXISTS "Users can view their own plans" ON user_plans;
+DROP POLICY IF EXISTS "Users can create plans" ON user_plans;
+DROP POLICY IF EXISTS "Admins can view all user plans" ON user_plans;
+DROP POLICY IF EXISTS "Admins can update all user plans" ON user_plans;
+
 CREATE POLICY "Users can view their own plans"
   ON user_plans FOR SELECT
   USING (auth.uid() = user_id);
@@ -397,6 +419,10 @@ CREATE POLICY "Admins can update all user plans"
   USING (public.is_admin(auth.uid()));
 
 -- Referrals policies
+DROP POLICY IF EXISTS "Users can view their own referrals" ON referrals;
+DROP POLICY IF EXISTS "Users can create referrals" ON referrals;
+DROP POLICY IF EXISTS "Admins can view all referrals" ON referrals;
+
 CREATE POLICY "Users can view their own referrals"
   ON referrals FOR SELECT
   USING (auth.uid() = referrer_id OR auth.uid() = referred_id);
@@ -410,6 +436,10 @@ CREATE POLICY "Admins can view all referrals"
   USING (public.is_admin(auth.uid()));
 
 -- Referral commissions policies
+DROP POLICY IF EXISTS "Users can view their own commissions" ON referral_commissions;
+DROP POLICY IF EXISTS "Admins can view all commissions" ON referral_commissions;
+DROP POLICY IF EXISTS "Admins can update all commissions" ON referral_commissions;
+
 CREATE POLICY "Users can view their own commissions"
   ON referral_commissions FOR SELECT
   USING (auth.uid() = referrer_id);
@@ -423,6 +453,10 @@ CREATE POLICY "Admins can update all commissions"
   USING (public.is_admin(auth.uid()));
 
 -- User wallets policies
+DROP POLICY IF EXISTS "Users can view their own wallets" ON user_wallets;
+DROP POLICY IF EXISTS "Users can manage their own wallets" ON user_wallets;
+DROP POLICY IF EXISTS "Admins can view all wallets" ON user_wallets;
+
 CREATE POLICY "Users can view their own wallets"
   ON user_wallets FOR SELECT
   USING (auth.uid() = user_id);
@@ -436,6 +470,9 @@ CREATE POLICY "Admins can view all wallets"
   USING (public.is_admin(auth.uid()));
 
 -- Deposit addresses policies (public read for active addresses)
+DROP POLICY IF EXISTS "Anyone can view active deposit addresses" ON deposit_addresses;
+DROP POLICY IF EXISTS "Admins can manage deposit addresses" ON deposit_addresses;
+
 CREATE POLICY "Anyone can view active deposit addresses"
   ON deposit_addresses FOR SELECT
   USING (is_active = TRUE);
@@ -702,11 +739,11 @@ INSERT INTO deposit_addresses (gateway, address, is_active, min_amount, max_amou
   ('coinbase', 'demo-coinbase-address-123456789', TRUE, 10, 100000),
   ('paypal', 'demo-paypal-address-123456789', TRUE, 50, 50000),
   ('stripe', 'demo-stripe-address-123456789', TRUE, 10, 100000),
-  ('btc', 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', TRUE, NULL, NULL),
-  ('usdt-trc20', 'TXYZabcdefghijklmnopqrstuvwxyz123456', TRUE, NULL, NULL),
-  ('usdt-erc20', '0x1234567890abcdef1234567890abcdef12345678', TRUE, NULL, NULL),
-  ('usdc', '0xabcdef1234567890abcdef1234567890abcdef12', TRUE, NULL, NULL),
-  ('eth', '0x9876543210fedcba9876543210fedcba98765432', TRUE, NULL, NULL)
+  ('btc', '163JAZy3CEz8YoNGDDtu9KxpXgnm5Kn9Rs', TRUE, NULL, NULL),
+  ('usdt-trc20', 'THaAnBqAvQ3YY751nXqNDzCoczYVQtBKnP', TRUE, NULL, NULL),
+  ('usdt-erc20', '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690', TRUE, NULL, NULL),
+  ('usdc', '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690', TRUE, NULL, NULL),
+  ('eth', '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690', TRUE, NULL, NULL)
 ON CONFLICT DO NOTHING;
 
 -- ============================================

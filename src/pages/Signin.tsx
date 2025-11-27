@@ -123,8 +123,8 @@ const SignIn = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 bg-[#111B2D] flex items-center justify-center p-8">
-        <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl">
+      <div className="flex-1 bg-[#111B2D] flex items-center justify-center p-4 sm:p-8">
+        <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12 items-center max-w-6xl">
           {/* Left Column - Illustration */}
           <div className="hidden lg:block relative h-full flex items-center justify-center">
             <div className="relative w-full max-w-md">
@@ -194,8 +194,8 @@ const SignIn = () => {
 
           {/* Right Column - Login Form */}
           <div className="w-full max-w-md mx-auto">
-            <div className="bg-[#0F1A2B] rounded-lg p-8 border border-white/5">
-              <h2 className="text-2xl font-bold text-white mb-6">Login To Your Account</h2>
+            <div className="bg-[#0F1A2B] rounded-lg p-4 sm:p-8 border border-white/5">
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">Login To Your Account</h2>
               
               {error && (
                 <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-md">

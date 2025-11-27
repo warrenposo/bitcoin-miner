@@ -130,6 +130,44 @@ BEGIN
   END IF;
 END $$;
 
+-- Ensure deposits table has crypto payment metadata
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'deposits' AND column_name = 'currency'
+  ) THEN
+    ALTER TABLE deposits ADD COLUMN currency TEXT DEFAULT 'USD';
+    UPDATE deposits SET currency = 'USD' WHERE currency IS NULL;
+    ALTER TABLE deposits ALTER COLUMN currency SET NOT NULL;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'deposits' AND column_name = 'conversion_rate'
+  ) THEN
+    ALTER TABLE deposits ADD COLUMN conversion_rate DECIMAL(18, 8);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'deposits' AND column_name = 'crypto_amount'
+  ) THEN
+    ALTER TABLE deposits ADD COLUMN crypto_amount DECIMAL(18, 8);
+  END IF;
+
+  -- Refresh gateway constraint to allow the new crypto rails
+  BEGIN
+    ALTER TABLE deposits DROP CONSTRAINT IF EXISTS deposits_gateway_check;
+    ALTER TABLE deposits ADD CONSTRAINT deposits_gateway_check
+      CHECK (gateway IN ('btc', 'usdt-trc20', 'usdt-erc20', 'usdc', 'eth', 'coinbase', 'paypal', 'stripe'));
+  EXCEPTION
+    WHEN others THEN
+      -- Constraint might not exist yet; ignore errors
+      NULL;
+  END;
+END $$;
+
 -- Generate referral codes for existing users who don't have one
 UPDATE profiles 
 SET referral_code = UPPER(SUBSTRING(MD5(email || user_id::text) FROM 1 FOR 8))

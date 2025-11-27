@@ -32,6 +32,8 @@ import {
   Info,
   MapPin,
   Mail,
+  Menu,
+  X,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -118,6 +120,7 @@ const Dashboard = () => {
   const [language, setLanguage] = useState<LanguageKey>('en');
   const [activeView, setActiveView] = useState<'dashboard' | 'my-referrals' | 'referral-bonus-logs' | 'withdraw-logs' | 'create-tickets' | 'all-tickets' | 'profile' | 'wallets' | '2fa-security' | 'change-password' | 'team' | 'about-us'>('dashboard');
   const [referralExpanded, setReferralExpanded] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Auto-expand referral menu if a referral view is active
   useEffect(() => {
@@ -480,7 +483,7 @@ const Dashboard = () => {
           </div>
           
           {/* Center Navigation */}
-          <nav className="flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-4 lg:gap-6">
             <button
               onClick={() => {
                 setActiveView('dashboard');
@@ -510,10 +513,20 @@ const Dashboard = () => {
             </button>
           </nav>
           
-          {/* Right Side - Language and Logout */}
-          <div className="flex items-center gap-4">
+          {/* Right Side - Mobile Menu Button, Language and Logout */}
+          <div className="flex items-center gap-2 lg:gap-4">
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden text-white hover:bg-white/10"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            
             <select
-              className="rounded-md bg-transparent px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10"
+              className="hidden sm:block rounded-md bg-transparent px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10"
               value={language}
               onChange={(e) => setLanguage(e.target.value as LanguageKey)}
             >
@@ -530,15 +543,39 @@ const Dashboard = () => {
                 Deutsch
               </option>
             </select>
-            <Button className="bg-rose-500 hover:bg-rose-600" onClick={handleSignOut}>
-              Logout
+            <Button className="bg-rose-500 hover:bg-rose-600 text-sm px-3 lg:px-4" onClick={handleSignOut}>
+              <span className="hidden sm:inline">Logout</span>
+              <span className="sm:hidden">Out</span>
             </Button>
           </div>
         </div>
       </header>
 
       <div className="flex">
-        <aside className="w-64 min-h-[calc(100vh-73px)] bg-[#0F1A2B] border-r border-white/5 p-4">
+        {/* Mobile Menu Overlay */}
+        {mobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
+        
+        {/* Sidebar - Hidden on mobile, shown as drawer */}
+        <aside className={`fixed lg:static inset-y-0 left-0 z-50 lg:z-auto w-64 min-h-[calc(100vh-73px)] bg-[#0F1A2B] border-r border-white/5 p-4 transform transition-transform duration-300 ease-in-out ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}>
+          {/* Close button for mobile */}
+          <div className="flex items-center justify-between mb-4 lg:hidden">
+            <span className="text-yellow-400 font-semibold">Menu</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
           <div className="space-y-2">
             {menuItems.map((item) => (
               <div key={item.label}>
@@ -701,6 +738,7 @@ const Dashboard = () => {
                       setReferralExpanded(false);
                       setSupportTicketExpanded(false);
                       setAccountExpanded(false);
+                      setMobileMenuOpen(false);
                       
                       if (item.path) {
                         navigate(item.path);
@@ -737,7 +775,7 @@ const Dashboard = () => {
           </div>
         </aside>
 
-        <main className="flex-1 p-6 space-y-6">
+        <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-x-hidden">
 
           {/* My Referrals Page */}
           {activeView === 'my-referrals' && (
@@ -1161,7 +1199,7 @@ const Dashboard = () => {
                 
                 <div className="p-6 space-y-6">
                   {/* Ticket Header Info */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label className="text-white/60 text-sm">Subject</Label>
                       <p className="text-white font-semibold mt-1">{selectedTicket.subject}</p>
@@ -1848,7 +1886,7 @@ const Dashboard = () => {
               </div>
 
               {/* Revolutionizing Crypto Mining Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-center">
                 <div className="space-y-6 relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent blur-3xl"></div>
                   <div className="relative">
@@ -1856,7 +1894,7 @@ const Dashboard = () => {
                     <p className="text-white/80 text-lg mb-8">
                       We're building the most efficient, sustainable, and profitable mining infrastructure for the decentralized future.
                     </p>
-                    <div className="grid grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                       <div>
                         <div className="text-4xl font-bold text-white mb-2">250+</div>
                         <div className="text-white/70 text-sm">Mining Rigs</div>
