@@ -2112,156 +2112,51 @@ const Dashboard = () => {
                   <h2 className="text-3xl font-bold text-white mb-2">Our Partners</h2>
                   <div className="w-16 h-0.5 bg-cyan-400"></div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-                  {/* Bitstamp */}
-                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
-                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {[
+                    { name: 'Google', logo: 'https://logo.clearbit.com/google.com', domain: 'google.com' },
+                    { name: 'Forbes', logo: 'https://logo.clearbit.com/forbes.com', domain: 'forbes.com' },
+                    { name: 'Yahoo!', logo: 'https://logo.clearbit.com/yahoo.com', domain: 'yahoo.com' },
+                    { name: 'YouTube', logo: 'https://logo.clearbit.com/youtube.com', domain: 'youtube.com' },
+                    { name: 'Binance', logo: 'https://logo.clearbit.com/binance.com', domain: 'binance.com' },
+                    { name: 'Coinbase', logo: 'https://logo.clearbit.com/coinbase.com', domain: 'coinbase.com' },
+                    { name: 'CoinPedia', logo: 'https://logo.clearbit.com/coinpedia.org', domain: 'coinpedia.org' },
+                    { name: 'AMBCrypto', logo: 'https://logo.clearbit.com/ambcrypto.com', domain: 'ambcrypto.com' },
+                    { name: 'Blockzeit', logo: 'https://logo.clearbit.com/blockzeit.com', domain: 'blockzeit.com' },
+                    { name: 'CoinGecko', logo: 'https://logo.clearbit.com/coingecko.com', domain: 'coingecko.com' },
+                    { name: 'Messari', logo: 'https://logo.clearbit.com/messari.io', domain: 'messari.io' },
+                    { name: 'CoinMarketCap', logo: 'https://logo.clearbit.com/coinmarketcap.com', domain: 'coinmarketcap.com' },
+                    { name: 'The Block', logo: 'https://logo.clearbit.com/theblock.co', domain: 'theblock.co' },
+                    { name: 'Chainlink', logo: 'https://logo.clearbit.com/chain.link', domain: 'chain.link' },
+                    { name: 'MarketWatch', logo: 'https://logo.clearbit.com/marketwatch.com', domain: 'marketwatch.com' },
+                  ].map((partner) => (
+                    <div 
+                      key={partner.name} 
+                      className="bg-white rounded p-4 flex items-center justify-center h-20 hover:bg-gray-50 transition relative"
+                    >
                       <img 
-                        src="https://logos-world.net/wp-content/uploads/2021/08/Bitstamp-Logo.png" 
-                        alt="Bitstamp"
-                        className="w-full h-full object-contain p-2"
+                        src={partner.logo} 
+                        alt={partner.name}
+                        className="max-w-full max-h-full object-contain"
+                        loading="lazy"
                         onError={(e) => {
-                          e.currentTarget.closest('.partner-logo-container')?.remove();
+                          // Fallback to text if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent && !parent.querySelector('.fallback-text')) {
+                            const fallback = document.createElement('span');
+                            fallback.className = 'fallback-text text-gray-600 text-xs font-semibold text-center';
+                            fallback.textContent = partner.name;
+                            parent.appendChild(fallback);
+                          }
                         }}
                       />
+                      <span className="fallback-text text-gray-600 text-xs font-semibold text-center hidden">
+                        {partner.name}
+                      </span>
                     </div>
-                    <p className="text-white/70 text-sm text-center">Bitstamp</p>
-                  </div>
-                  
-                  {/* Blockchain.com */}
-                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
-                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src="https://logos-world.net/wp-content/uploads/2021/08/Blockchain-Logo.png" 
-                        alt="Blockchain.com"
-                        className="w-full h-full object-contain p-2"
-                        onError={(e) => {
-                          e.currentTarget.closest('.partner-logo-container')?.remove();
-                        }}
-                      />
-                    </div>
-                    <p className="text-white/70 text-sm text-center">Blockchain.com</p>
-                  </div>
-                  
-                  {/* Block Energy */}
-                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
-                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src="https://via.placeholder.com/64x64/000000/FFFFFF?text=BE" 
-                        alt="Block Energy"
-                        className="w-full h-full object-contain p-2"
-                        onError={(e) => {
-                          e.currentTarget.closest('.partner-logo-container')?.remove();
-                        }}
-                      />
-                    </div>
-                    <p className="text-white/70 text-sm text-center">Block Energy</p>
-                  </div>
-                  
-                  {/* Hetzner Online */}
-                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
-                    <div className="w-16 h-16 bg-red-600 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src="https://www.hetzner.com/assets/images/hetzner-logo.svg" 
-                        alt="Hetzner Online"
-                        className="w-full h-full object-contain p-2"
-                        onError={(e) => {
-                          e.currentTarget.closest('.partner-logo-container')?.remove();
-                        }}
-                      />
-                    </div>
-                    <p className="text-white/70 text-sm text-center">Hetzner Online</p>
-                  </div>
-                  
-                  {/* Gandi */}
-                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
-                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src="https://www.gandi.net/static/images/gandi-logo.svg" 
-                        alt="Gandi"
-                        className="w-full h-full object-contain p-2"
-                        onError={(e) => {
-                          e.currentTarget.closest('.partner-logo-container')?.remove();
-                        }}
-                      />
-                    </div>
-                    <p className="text-white/70 text-sm text-center">Gandi</p>
-                  </div>
-                  
-                  {/* HashPower */}
-                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
-                    <div className="w-16 h-16 bg-black rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src="https://via.placeholder.com/64x64/000000/FFFFFF?text=HP" 
-                        alt="HashPower"
-                        className="w-full h-full object-contain p-2"
-                        onError={(e) => {
-                          e.currentTarget.closest('.partner-logo-container')?.remove();
-                        }}
-                      />
-                    </div>
-                    <p className="text-white/70 text-sm text-center">HashPower</p>
-                  </div>
-                  
-                  {/* CryptoShield */}
-                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
-                    <div className="w-16 h-16 bg-blue-900 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src="https://via.placeholder.com/64x64/1e3a8a/FFFFFF?text=CS" 
-                        alt="CryptoShield"
-                        className="w-full h-full object-contain p-2"
-                        onError={(e) => {
-                          e.currentTarget.closest('.partner-logo-container')?.remove();
-                        }}
-                      />
-                    </div>
-                    <p className="text-white/70 text-sm text-center">CryptoShield</p>
-                  </div>
-                  
-                  {/* CryptoCircuit */}
-                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
-                    <div className="w-16 h-16 bg-purple-900 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src="https://via.placeholder.com/64x64/581c87/FFFFFF?text=CC" 
-                        alt="CryptoCircuit"
-                        className="w-full h-full object-contain p-2"
-                        onError={(e) => {
-                          e.currentTarget.closest('.partner-logo-container')?.remove();
-                        }}
-                      />
-                    </div>
-                    <p className="text-white/70 text-sm text-center">CryptoCircuit</p>
-                  </div>
-                  
-                  {/* BitVenture */}
-                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
-                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src="https://via.placeholder.com/64x64/FFFFFF/000000?text=BV" 
-                        alt="BitVenture"
-                        className="w-full h-full object-contain p-2"
-                        onError={(e) => {
-                          e.currentTarget.closest('.partner-logo-container')?.remove();
-                        }}
-                      />
-                    </div>
-                    <p className="text-white/70 text-sm text-center">BitVenture</p>
-                  </div>
-                  
-                  {/* TechWatt */}
-                  <div className="bg-[#111B2D]/70 rounded-lg p-4 border border-white/5 flex flex-col items-center justify-center min-h-[120px] partner-logo-container">
-                    <div className="w-16 h-16 bg-white rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src="https://via.placeholder.com/64x64/FFFFFF/000000?text=TW" 
-                        alt="TechWatt"
-                        className="w-full h-full object-contain p-2"
-                        onError={(e) => {
-                          e.currentTarget.closest('.partner-logo-container')?.remove();
-                        }}
-                      />
-                    </div>
-                    <p className="text-white/70 text-sm text-center">TechWatt</p>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>

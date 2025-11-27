@@ -41,7 +41,7 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-white/70 hover:text-yellow-400 transition-colors">
+                <Link to="/about-us" className="text-white/70 hover:text-yellow-400 transition-colors">
                   AboutUs
                 </Link>
               </li>
@@ -66,12 +66,12 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/privacy-policy" className="text-white/70 hover:text-yellow-400 transition-colors">
+                <Link to="/privacy" className="text-white/70 hover:text-yellow-400 transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/terms-of-service" className="text-white/70 hover:text-yellow-400 transition-colors">
+                <Link to="/terms" className="text-white/70 hover:text-yellow-400 transition-colors">
                   Terms of Service
                 </Link>
               </li>

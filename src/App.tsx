@@ -13,6 +13,12 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Deposit from "./pages/Deposit";
 import Withdraw from "./pages/Withdraw";
 import StartMining from "./pages/StartMining";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import UsagePolicy from "./pages/UsagePolicy";
+import CookiePolicy from "./pages/CookiePolicy";
+import Team from "./pages/Team";
+import AboutUs from "./pages/AboutUs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +74,16 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            {/* Public Pages */}
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/usage-policy" element={<UsagePolicy />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
+            <Route path="/team" element={<Team />} />
+            <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/about" element={<AboutUs />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
