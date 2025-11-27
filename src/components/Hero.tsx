@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Bitcoin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const Hero = () => {
   return (
@@ -12,18 +13,21 @@ export const Hero = () => {
       </div>
 
       <div className="container mx-auto px-4 py-20 text-center relative z-10">
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-primary bg-clip-text text-transparent animate-in fade-in slide-in-from-bottom-4 duration-1000">
-          Start Mining Bitcoin Today
+        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-[1.1] py-2 bg-gradient-to-r from-foreground via-primary to-primary bg-clip-text text-transparent animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <span className="block">Start Mining</span>
+          <span className="block text-primary">Bitcoin Today</span>
         </h1>
         <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
           Join thousands of miners earning cryptocurrency with our powerful cloud mining platform
         </p>
-        <Button 
-          size="lg" 
-          className="text-lg px-8 py-6 bg-gradient-gold hover:shadow-glow transition-all duration-300 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300"
-        >
-          Start Mining Now
-        </Button>
+        <Link to="/login">
+          <Button 
+            size="lg" 
+            className="text-lg px-8 py-6 bg-gradient-gold hover:shadow-glow transition-all duration-300 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300"
+          >
+            Start Mining Now
+          </Button>
+        </Link>
       </div>
     </section>
   );
