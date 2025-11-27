@@ -7,36 +7,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Home,
-  Wallet,
   ArrowRight,
-  ChevronRight,
-  ChevronDown,
-  Pickaxe,
-  Gift,
-  MessageSquare,
-  Headphones,
-  User,
   Send,
   Zap,
-  CircleDollarSign,
   Users,
   List,
   Copy,
   CirclePlus,
   Plus,
   Paperclip,
-  Lock,
-  Key,
-  Power,
   Info,
   MapPin,
   Mail,
-  Menu,
-  X,
+  LogOut,
+  MessageSquare,
+  Headphones,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { UserSidebar } from '@/components/UserSidebar';
 
 interface MiningStats {
   hash_rate: number;
@@ -118,23 +107,17 @@ const Dashboard = () => {
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
   const [language, setLanguage] = useState<LanguageKey>('en');
-  const [activeView, setActiveView] = useState<'dashboard' | 'my-referrals' | 'referral-bonus-logs' | 'withdraw-logs' | 'create-tickets' | 'all-tickets' | 'profile' | 'wallets' | '2fa-security' | 'change-password' | 'team' | 'about-us'>('dashboard');
-  const [referralExpanded, setReferralExpanded] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // Auto-expand referral menu if a referral view is active
-  useEffect(() => {
-    if (activeView === 'my-referrals' || activeView === 'referral-bonus-logs' || activeView === 'withdraw-logs') {
-      setReferralExpanded(true);
-    }
-  }, [activeView]);
+  // Check for view from sessionStorage (set by navigation)
+  const initialView = (sessionStorage.getItem('dashboard_view') as any) || 'dashboard';
+  const [activeView, setActiveView] = useState<'dashboard' | 'my-referrals' | 'referral-bonus-logs' | 'withdraw-logs' | 'create-tickets' | 'all-tickets' | 'profile' | 'wallets' | '2fa-security' | 'change-password' | 'team' | 'about-us'>(initialView);
 
-  // Auto-expand support ticket menu if a support ticket view is active
+  // Clear sessionStorage view after using it
   useEffect(() => {
-    if (activeView === 'create-tickets' || activeView === 'all-tickets') {
-      setSupportTicketExpanded(true);
+    if (initialView && initialView !== 'dashboard') {
+      sessionStorage.removeItem('dashboard_view');
     }
-  }, [activeView]);
+  }, []);
+  
 
   // Auto-expand account menu if an account view is active
   useEffect(() => {
@@ -163,7 +146,6 @@ const Dashboard = () => {
   const [referralBonusLogs, setReferralBonusLogs] = useState<any[]>([]);
   const [withdrawLogs, setWithdrawLogs] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [supportTicketExpanded, setSupportTicketExpanded] = useState(false);
   const [ticketName, setTicketName] = useState('');
   const [ticketEmail, setTicketEmail] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -393,60 +375,6 @@ const Dashboard = () => {
     }
   };
 
-  const menuItems = [
-    { label: 'Dashboard', icon: Home, path: '/dashboard', active: true },
-    { 
-      label: 'Deposit', 
-      icon: Wallet, 
-      subItems: [
-        { label: 'Deposit Now', path: '/deposit', view: 'deposit' },
-        { label: 'Deposit Log', path: '/deposit', view: 'log' },
-      ]
-    },
-    { 
-      label: 'Withdraw', 
-      icon: CircleDollarSign, 
-      subItems: [
-        { label: 'Withdraw Now', path: '/withdraw', view: 'withdraw' },
-        { label: 'Withdraw Log', path: '/withdraw', view: 'log' },
-      ]
-    },
-    { 
-      label: 'Start Mining', 
-      icon: Pickaxe, 
-      subItems: [
-        { label: 'Buy Plan', path: '/start-mining', view: 'buy' },
-        { label: 'Purchased Plans', path: '/start-mining', view: 'purchased' },
-      ]
-    },
-    { 
-      label: 'Referral', 
-      icon: Gift,
-      subItems: [
-        { label: 'My Referrals', view: 'my-referrals' },
-        { label: 'Referral Bonus Logs', view: 'referral-bonus-logs' },
-        { label: 'Withdraw Logs', view: 'withdraw-logs' },
-      ]
-    },
-    { 
-      label: 'Support Ticket', 
-      icon: MessageSquare,
-      subItems: [
-        { label: 'Create Tickets', view: 'create-tickets' },
-        { label: 'All Tickets', view: 'all-tickets' },
-      ]
-    },
-    { 
-      label: 'My Account', 
-      icon: User,
-      subItems: [
-        { label: 'Profile', view: 'profile' },
-        { label: 'Wallets', view: 'wallets' },
-        { label: '2FA Security', view: '2fa-security' },
-        { label: 'Change Password', view: 'change-password' },
-      ]
-    },
-  ];
 
   const latestPlans = [
     { order: '#00145', name: 'Starter Plan', totalDays: 15, remaining: 15, status: 'Pending' },
@@ -516,15 +444,6 @@ const Dashboard = () => {
           {/* Right Side - Mobile Menu Button, Language and Logout */}
           <div className="flex items-center gap-2 lg:gap-4">
             {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden text-white hover:bg-white/10"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-            
             <select
               className="hidden sm:block rounded-md bg-transparent px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10"
               value={language}
@@ -552,228 +471,11 @@ const Dashboard = () => {
       </header>
 
       <div className="flex">
-        {/* Mobile Menu Overlay */}
-        {mobileMenuOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-        )}
-        
-        {/* Sidebar - Hidden on mobile, shown as drawer */}
-        <aside className={`fixed lg:static inset-y-0 left-0 z-50 lg:z-auto w-64 min-h-[calc(100vh-73px)] bg-[#0F1A2B] border-r border-white/5 p-4 transform transition-transform duration-300 ease-in-out ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}>
-          {/* Close button for mobile */}
-          <div className="flex items-center justify-between mb-4 lg:hidden">
-            <span className="text-yellow-400 font-semibold">Menu</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {menuItems.map((item) => (
-              <div key={item.label}>
-                {item.subItems ? (
-                  <div>
-                    <button
-                      onClick={() => {
-                        if (item.label === 'Referral') {
-                          // If clicking on Referral, close other menus and toggle Referral
-                          setSupportTicketExpanded(false);
-                          setAccountExpanded(false);
-                          setReferralExpanded(!referralExpanded);
-                          // If expanding, set to first sub-item view
-                          if (!referralExpanded && item.subItems && item.subItems.length > 0) {
-                            setActiveView(item.subItems[0].view);
-                          }
-                        } else if (item.label === 'Support Ticket') {
-                          // If clicking on Support Ticket, close other menus and toggle Support Ticket
-                          setReferralExpanded(false);
-                          setAccountExpanded(false);
-                          setSupportTicketExpanded(!supportTicketExpanded);
-                          // If expanding, set to first sub-item view
-                          if (!supportTicketExpanded && item.subItems && item.subItems.length > 0) {
-                            setActiveView(item.subItems[0].view);
-                          }
-                        } else if (item.label === 'My Account') {
-                          // If clicking on My Account, close other menus and toggle My Account
-                          setReferralExpanded(false);
-                          setSupportTicketExpanded(false);
-                          setAccountExpanded(!accountExpanded);
-                          // If expanding, set to first sub-item view
-                          if (!accountExpanded && item.subItems && item.subItems.length > 0) {
-                            setActiveView(item.subItems[0].view);
-                          }
-                        }
-                      }}
-                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition ${
-                        (item.label === 'Referral' && referralExpanded) || 
-                        (item.label === 'Support Ticket' && supportTicketExpanded) ||
-                        (item.label === 'My Account' && accountExpanded)
-                          ? 'bg-yellow-500/20 text-yellow-400' 
-                          : 'text-white/70 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                      </div>
-                      {(item.label === 'Referral' || item.label === 'Support Ticket' || item.label === 'My Account') ? (
-                        (item.label === 'Referral' && referralExpanded) || 
-                        (item.label === 'Support Ticket' && supportTicketExpanded) ||
-                        (item.label === 'My Account' && accountExpanded) ? (
-                          <ChevronDown className="h-4 w-4 text-white/40" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-white/40" />
-                        )
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-white/40" />
-                      )}
-                    </button>
-                    {item.label === 'Referral' && referralExpanded && (
-                      <div className="ml-4 space-y-1 mt-1">
-                        {item.subItems.map((subItem: any) => (
-                          <button
-                            key={subItem.label}
-                            onClick={() => {
-                              setActiveView(subItem.view);
-                              if (subItem.path) {
-                                navigate(subItem.path);
-                              }
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition ${
-                              activeView === subItem.view
-                                ? 'bg-yellow-500/20 text-yellow-400'
-                                : 'text-white/70 hover:text-white hover:bg-white/5'
-                            }`}
-                          >
-                            {subItem.view === 'my-referrals' && <Users className="h-4 w-4" />}
-                            {subItem.view === 'referral-bonus-logs' && <List className="h-4 w-4" />}
-                            {subItem.view === 'withdraw-logs' && <List className="h-4 w-4" />}
-                            {subItem.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {item.label === 'Support Ticket' && supportTicketExpanded && (
-                      <div className="ml-4 space-y-1 mt-1">
-                        {item.subItems.map((subItem: any) => (
-                          <button
-                            key={subItem.label}
-                            onClick={() => {
-                              setActiveView(subItem.view);
-                              if (subItem.path) {
-                                navigate(subItem.path);
-                              }
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition ${
-                              activeView === subItem.view
-                                ? 'bg-yellow-500/20 text-yellow-400'
-                                : 'text-white/70 hover:text-white hover:bg-white/5'
-                            }`}
-                          >
-                            {subItem.view === 'create-tickets' && <CirclePlus className="h-4 w-4" />}
-                            {subItem.view === 'all-tickets' && <List className="h-4 w-4" />}
-                            {subItem.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {item.label === 'My Account' && accountExpanded && (
-                      <div className="ml-4 space-y-1 mt-1">
-                        {item.subItems.map((subItem: any) => (
-                          <button
-                            key={subItem.label}
-                            onClick={() => {
-                              setActiveView(subItem.view);
-                              if (subItem.path) {
-                                navigate(subItem.path);
-                              }
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition ${
-                              activeView === subItem.view
-                                ? 'bg-yellow-500/20 text-yellow-400'
-                                : 'text-white/70 hover:text-white hover:bg-white/5'
-                            }`}
-                          >
-                            {subItem.view === 'profile' && <User className="h-4 w-4" />}
-                            {subItem.view === 'wallets' && <Wallet className="h-4 w-4" />}
-                            {subItem.view === '2fa-security' && <Lock className="h-4 w-4" />}
-                            {subItem.view === 'change-password' && <Key className="h-4 w-4" />}
-                            {subItem.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {item.label !== 'Referral' && item.label !== 'Support Ticket' && item.label !== 'My Account' && (
-                      <div className="ml-4 space-y-1">
-                        {item.subItems.map((subItem: any) => (
-                          <button
-                            key={subItem.label}
-                            onClick={() => {
-                              navigate(subItem.path);
-                              if (subItem.view) {
-                                sessionStorage.setItem(`${subItem.path}_view`, subItem.view);
-                              }
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition"
-                          >
-                            <ChevronRight className="h-4 w-4 text-white/40" />
-                            {subItem.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      // Close all expanded menus when clicking on a regular menu item
-                      setReferralExpanded(false);
-                      setSupportTicketExpanded(false);
-                      setAccountExpanded(false);
-                      setMobileMenuOpen(false);
-                      
-                      if (item.path) {
-                        navigate(item.path);
-                      }
-                      if (item.label === 'Dashboard') {
-                        setActiveView('dashboard');
-                      }
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition ${
-                      item.active && activeView === 'dashboard'
-                        ? 'bg-yellow-500/20 text-yellow-400' 
-                        : 'text-white/70 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-white/40" />
-                  </button>
-                )}
-              </div>
-            ))}
-            {/* Logout Button */}
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <button
-                onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition"
-              >
-                <Power className="h-4 w-4" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </aside>
+        <UserSidebar 
+          activeView={activeView} 
+          onViewChange={setActiveView}
+          onSignOut={handleSignOut}
+        />
 
         <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-x-hidden">
 

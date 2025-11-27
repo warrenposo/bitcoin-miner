@@ -14,24 +14,14 @@ import {
 } from '@/components/ui/select';
 import {
   ArrowLeft,
-  ChevronRight,
-  CircleDollarSign,
   Copy,
   CreditCard,
-  Gift,
-  Home,
-  List,
-  LogOut,
-  MessageSquare,
-  Menu,
-  Pickaxe,
   Plus,
   Shield,
-  User,
-  Wallet,
-  X,
+  LogOut,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { UserSidebar } from '@/components/UserSidebar';
 
 type DepositView = 'deposit' | 'log';
 type DepositStage = 'form' | 'preview' | 'payment';
@@ -157,6 +147,32 @@ const Deposit = () => {
     }
   }, [initialView]);
 
+  // Listen for view changes from menu when already on this page
+  useEffect(() => {
+    const checkView = () => {
+      const storedView = sessionStorage.getItem('/deposit_view');
+      if (storedView && (storedView === 'deposit' || storedView === 'log')) {
+        setActiveView(storedView as 'deposit' | 'log');
+        sessionStorage.removeItem('/deposit_view');
+      }
+    };
+    
+    // Check immediately
+    checkView();
+    
+    // Also listen for storage events (when navigating from same page)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === '/deposit_view' && e.newValue) {
+        if (e.newValue === 'deposit' || e.newValue === 'log') {
+          setActiveView(e.newValue as 'deposit' | 'log');
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
   const [gateway, setGateway] = useState<GatewayValue | ''>('');
   const [amount, setAmount] = useState('');
   const [limit, setLimit] = useState({ min: 0, max: 0 });
@@ -168,7 +184,6 @@ const Deposit = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [deposits, setDeposits] = useState<any[]>([]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const selectedGatewayOption = useMemo(
     () => gatewayOptions.find((option) => option.value === gateway),
@@ -284,22 +299,26 @@ const Deposit = () => {
     }
   };
 
-  const menuItems = [
-    { label: 'Dashboard', icon: Home, path: '/dashboard' },
-    {
-      label: 'Deposit',
-      icon: Wallet,
-      subItems: [
-        { label: 'Deposit Now', path: '/deposit', view: 'deposit' },
-        { label: 'Deposit Log', path: '/deposit', view: 'log' },
-      ],
-    },
-    { label: 'Withdraw', icon: CircleDollarSign },
-    { label: 'Start Mining', icon: Pickaxe },
-    { label: 'Referral', icon: Gift },
-    { label: 'Support Ticket', icon: MessageSquare },
-    { label: 'My Account', icon: User },
-  ];
+  const handleViewChange = (view: string) => {
+    if (view === 'deposit' || view === 'log') {
+      setActiveView(view as 'deposit' | 'log');
+      // Clear sessionStorage if it was set
+      sessionStorage.removeItem('/deposit_view');
+    }
+  };
+
+  // Listen for custom viewchange events
+  useEffect(() => {
+    const handleViewChangeEvent = (e: CustomEvent) => {
+      const view = e.detail?.view;
+      if (view === 'deposit' || view === 'log') {
+        setActiveView(view as 'deposit' | 'log');
+      }
+    };
+    
+    window.addEventListener('viewchange', handleViewChangeEvent as EventListener);
+    return () => window.removeEventListener('viewchange', handleViewChangeEvent as EventListener);
+  }, []);
 
   useEffect(() => {
     if (user && activeView === 'log') {
@@ -422,103 +441,17 @@ const Deposit = () => {
   return (
     <div className="min-h-screen bg-[#0B1421] text-white">
       <div className="flex">
-        {/* Mobile Menu Overlay */}
-        {mobileMenuOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-        )}
-        
-        {/* Sidebar - Hidden on mobile, shown as drawer */}
-        <aside className={`fixed lg:static inset-y-0 left-0 z-50 lg:z-auto w-64 min-h-screen bg-[#0F1A2B] border-r border-white/5 p-4 transform transition-transform duration-300 ease-in-out ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}>
-          {/* Close button for mobile */}
-          <div className="flex items-center justify-between mb-4 lg:hidden">
-            <span className="text-yellow-400 font-semibold">Menu</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {menuItems.map((item) => (
-              <div key={item.label}>
-                {item.subItems ? (
-                  <div>
-                    <div className="flex items-center justify-between px-4 py-3 text-yellow-400 font-medium">
-                      <div className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                      </div>
-                    </div>
-                    <div className="ml-4 space-y-1">
-                      {item.subItems.map((subItem) => (
-                        <button
-                          key={subItem.label}
-                          onClick={() => {
-                            if (subItem.view) {
-                              setActiveView(subItem.view as 'deposit' | 'log');
-                            } else {
-                              navigate(subItem.path);
-                            }
-                            setMobileMenuOpen(false);
-                          }}
-                          className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition ${
-                            (subItem.view === 'deposit' && activeView === 'deposit') ||
-                            (subItem.view === 'log' && activeView === 'log')
-                              ? 'bg-yellow-500/20 text-yellow-400'
-                              : 'text-white/70 hover:text-white hover:bg-white/5'
-                          }`}
-                        >
-                          {subItem.view === 'deposit' ? (
-                            <Plus className="h-4 w-4" />
-                          ) : (
-                            <List className="h-4 w-4" />
-                          )}
-                          {subItem.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      if (item.path) navigate(item.path);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-white/40" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </aside>
+        <UserSidebar 
+          activeView={activeView === 'deposit' ? 'deposit' : activeView === 'log' ? 'log' : undefined}
+          onViewChange={handleViewChange}
+          onSignOut={handleSignOut}
+        />
 
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
           {/* Header */}
           <header className="mb-4 sm:mb-6 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden text-white hover:bg-white/10"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
               <h1 className="text-xl sm:text-2xl font-semibold">
                 {activeView === 'deposit'
                   ? depositStage === 'preview'

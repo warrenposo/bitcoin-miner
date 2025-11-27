@@ -20,23 +20,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  Home,
-  Wallet,
-  ChevronRight,
-  Pickaxe,
-  Gift,
-  MessageSquare,
-  User,
-  CircleDollarSign,
   ShoppingCart,
   List,
   LogOut,
   Copy,
-  Menu,
-  X,
   ArrowLeft,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { UserSidebar } from '@/components/UserSidebar';
 
 interface MiningPlan {
   id: string;
@@ -107,6 +98,32 @@ const StartMining = () => {
       sessionStorage.removeItem('/start-mining_view');
     }
   }, []);
+
+  // Listen for view changes from menu when already on this page
+  useEffect(() => {
+    const checkView = () => {
+      const storedView = sessionStorage.getItem('/start-mining_view');
+      if (storedView && (storedView === 'buy' || storedView === 'purchased')) {
+        setActiveView(storedView as 'buy' | 'purchased');
+        sessionStorage.removeItem('/start-mining_view');
+      }
+    };
+    
+    // Check immediately
+    checkView();
+    
+    // Also listen for storage events (when navigating from same page)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === '/start-mining_view' && e.newValue) {
+        if (e.newValue === 'buy' || e.newValue === 'purchased') {
+          setActiveView(e.newValue as 'buy' | 'purchased');
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
   const [selectedCurrency, setSelectedCurrency] = useState<'BTC' | 'LTC'>('BTC');
   const [btcPrice, setBtcPrice] = useState(109122.76);
   const [ltcPrice, setLtcPrice] = useState(88.12);
@@ -121,7 +138,6 @@ const StartMining = () => {
   const [activePurchase, setActivePurchase] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // BTC Plans
   const btcPlans: MiningPlan[] = [
@@ -664,22 +680,6 @@ const StartMining = () => {
     }
   };
 
-  const menuItems = [
-    { label: 'Dashboard', icon: Home, path: '/dashboard' },
-    { label: 'Deposit', icon: Wallet, path: '/deposit' },
-    { label: 'Withdraw', icon: CircleDollarSign, path: '/withdraw' },
-    { 
-      label: 'Start Mining', 
-      icon: Pickaxe, 
-      subItems: [
-        { label: 'Buy Plan', path: '/start-mining', view: 'buy' },
-        { label: 'Purchased Plans', path: '/start-mining', view: 'purchased' },
-      ]
-    },
-    { label: 'Referral', icon: Gift },
-    { label: 'Support Ticket', icon: MessageSquare },
-    { label: 'My Account', icon: User },
-  ];
 
   const [selectedPurchasedPlan, setSelectedPurchasedPlan] = useState<PurchasedPlan | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -737,86 +737,41 @@ const StartMining = () => {
     }
   };
 
+  const handleViewChange = (view: string) => {
+    if (view === 'buy' || view === 'purchased') {
+      setActiveView(view as 'buy' | 'purchased');
+      // Clear sessionStorage if it was set
+      sessionStorage.removeItem('/start-mining_view');
+    }
+  };
+
+  // Listen for custom viewchange events
+  useEffect(() => {
+    const handleViewChangeEvent = (e: CustomEvent) => {
+      const view = e.detail?.view;
+      if (view === 'buy' || view === 'purchased') {
+        setActiveView(view as 'buy' | 'purchased');
+      }
+    };
+    
+    window.addEventListener('viewchange', handleViewChangeEvent as EventListener);
+    return () => window.removeEventListener('viewchange', handleViewChangeEvent as EventListener);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#0B1421] text-white">
       <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 min-h-screen bg-[#0F1A2B] border-r border-white/5 p-4">
-          <div className="space-y-2">
-            {menuItems.map((item) => (
-              <div key={item.label}>
-                {item.subItems ? (
-                  <div>
-                    <div className={`flex items-center justify-between px-4 py-3 font-medium ${
-                      item.label === 'Start Mining' ? 'text-yellow-400' : 'text-white/70'
-                    }`}>
-                      <div className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                      </div>
-                    </div>
-                    <div className="ml-4 space-y-1">
-                      {item.subItems.map((subItem: any) => (
-                        <button
-                          key={subItem.label}
-                          onClick={() => {
-                            if (subItem.view) {
-                              setActiveView(subItem.view as 'buy' | 'purchased');
-                            } else {
-                              navigate(subItem.path);
-                            }
-                            setMobileMenuOpen(false);
-                          }}
-                          className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition ${
-                            (subItem.view === 'buy' && activeView === 'buy') ||
-                            (subItem.view === 'purchased' && activeView === 'purchased')
-                              ? 'bg-yellow-500/20 text-yellow-400'
-                              : 'text-white/70 hover:text-white hover:bg-white/5'
-                          }`}
-                        >
-                          {subItem.view === 'buy' ? (
-                            <ShoppingCart className="h-4 w-4" />
-                          ) : (
-                            <List className="h-4 w-4" />
-                          )}
-                          {subItem.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      if (item.path) navigate(item.path);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-white/40" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </aside>
+        <UserSidebar 
+          activeView={activeView === 'buy' ? 'buy' : activeView === 'purchased' ? 'purchased' : undefined}
+          onViewChange={handleViewChange}
+          onSignOut={handleSignOut}
+        />
 
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
           {/* Header */}
           <header className="mb-4 sm:mb-6 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden text-white hover:bg-white/10"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
               <h1 className="text-xl sm:text-2xl font-semibold">
                 {activeView === 'buy' 
                   ? purchaseStage === 'preview'

@@ -13,19 +13,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Home,
-  Wallet,
-  ChevronRight,
-  Pickaxe,
-  Gift,
-  MessageSquare,
-  User,
-  CircleDollarSign,
   MinusCircle,
   List,
-  LogOut,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { UserSidebar } from '@/components/UserSidebar';
 
 const Withdraw = () => {
   const { user, profile, signOut } = useAuth();
@@ -39,6 +31,32 @@ const Withdraw = () => {
     if (initialView) {
       sessionStorage.removeItem('/withdraw_view');
     }
+  }, []);
+
+  // Listen for view changes from menu when already on this page
+  useEffect(() => {
+    const checkView = () => {
+      const storedView = sessionStorage.getItem('/withdraw_view');
+      if (storedView && (storedView === 'withdraw' || storedView === 'log')) {
+        setActiveView(storedView as 'withdraw' | 'log');
+        sessionStorage.removeItem('/withdraw_view');
+      }
+    };
+    
+    // Check immediately
+    checkView();
+    
+    // Also listen for storage events (when navigating from same page)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === '/withdraw_view' && e.newValue) {
+        if (e.newValue === 'withdraw' || e.newValue === 'log') {
+          setActiveView(e.newValue as 'withdraw' | 'log');
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
   const [gateway, setGateway] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
@@ -190,85 +208,35 @@ const Withdraw = () => {
     }
   };
 
-  const menuItems = [
-    { label: 'Dashboard', icon: Home, path: '/dashboard' },
-    { label: 'Deposit', icon: Wallet, path: '/deposit' },
-    { 
-      label: 'Withdraw', 
-      icon: CircleDollarSign, 
-      subItems: [
-        { label: 'Withdraw Now', path: '/withdraw', view: 'withdraw' },
-        { label: 'Withdraw Log', path: '/withdraw', view: 'log' },
-      ]
-    },
-    { label: 'Start Mining', icon: Pickaxe },
-    { label: 'Referral', icon: Gift },
-    { label: 'Support Ticket', icon: MessageSquare },
-    { label: 'My Account', icon: User },
-  ];
+  const handleViewChange = (view: string) => {
+    if (view === 'withdraw' || view === 'log') {
+      setActiveView(view as 'withdraw' | 'log');
+      // Clear sessionStorage if it was set
+      sessionStorage.removeItem('/withdraw_view');
+    }
+  };
+
+  // Listen for custom viewchange events
+  useEffect(() => {
+    const handleViewChangeEvent = (e: CustomEvent) => {
+      const view = e.detail?.view;
+      if (view === 'withdraw' || view === 'log') {
+        setActiveView(view as 'withdraw' | 'log');
+      }
+    };
+    
+    window.addEventListener('viewchange', handleViewChangeEvent as EventListener);
+    return () => window.removeEventListener('viewchange', handleViewChangeEvent as EventListener);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0B1421] text-white">
       <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 min-h-screen bg-[#0F1A2B] border-r border-white/5 p-4">
-          <div className="space-y-2">
-            {menuItems.map((item) => (
-              <div key={item.label}>
-                {item.subItems ? (
-                  <div>
-                    <div className={`flex items-center justify-between px-4 py-3 font-medium ${
-                      item.label === 'Withdraw' ? 'text-yellow-400' : 'text-white/70'
-                    }`}>
-                      <div className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                      </div>
-                    </div>
-                    <div className="ml-4 space-y-1">
-                      {item.subItems.map((subItem) => (
-                        <button
-                          key={subItem.label}
-                          onClick={() => {
-                            if (subItem.view) {
-                              setActiveView(subItem.view as 'withdraw' | 'log');
-                            } else {
-                              navigate(subItem.path);
-                            }
-                          }}
-                          className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition ${
-                            (subItem.view === 'withdraw' && activeView === 'withdraw') ||
-                            (subItem.view === 'log' && activeView === 'log')
-                              ? 'bg-yellow-500/20 text-yellow-400'
-                              : 'text-white/70 hover:text-white hover:bg-white/5'
-                          }`}
-                        >
-                          {subItem.view === 'withdraw' ? (
-                            <MinusCircle className="h-4 w-4" />
-                          ) : (
-                            <List className="h-4 w-4" />
-                          )}
-                          {subItem.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => item.path && navigate(item.path)}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-white/40" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </aside>
+        <UserSidebar 
+          activeView={activeView === 'withdraw' ? 'withdraw' : activeView === 'log' ? 'log' : undefined}
+          onViewChange={handleViewChange}
+          onSignOut={handleSignOut}
+        />
 
         {/* Main Content */}
         <main className="flex-1 p-6">
@@ -279,14 +247,6 @@ const Withdraw = () => {
                 {activeView === 'withdraw' ? 'Withdraw Now' : 'Withdraw Log'}
               </h1>
             </div>
-            <Button
-              variant="outline"
-              className="border-rose-500 text-rose-400 hover:bg-rose-500/10"
-              onClick={handleSignOut}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
           </header>
 
           {activeView === 'withdraw' ? (

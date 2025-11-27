@@ -5,10 +5,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 
 export const Navbar = () => {
-  const { user, signOut, isAdmin, loading } = useAuth();
+  const { user, signOut, isAdmin, loading, session } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
-  const showSignOut = !loading && Boolean(user);
+  // Only show Sign Out if we're not loading AND we have a verified user with a valid session
+  const showSignOut = !loading && Boolean(user) && Boolean(session);
 
   const handleAuthAction = async () => {
     if (isProcessing) return;
