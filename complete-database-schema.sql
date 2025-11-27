@@ -620,30 +620,39 @@ DECLARE
   user_referral_code TEXT;
 BEGIN
   -- Generate unique referral code
-  user_referral_code := UPPER(SUBSTRING(MD5(NEW.email || NEW.id::text) FROM 1 FOR 8));
+  user_referral_code := UPPER(SUBSTRING(MD5(COALESCE(NEW.email, '') || NEW.id::text) FROM 1 FOR 8));
   
   -- Ensure uniqueness
   WHILE EXISTS (SELECT 1 FROM profiles WHERE referral_code = user_referral_code) LOOP
-    user_referral_code := UPPER(SUBSTRING(MD5(NEW.email || NEW.id::text || random()::text) FROM 1 FOR 8));
+    user_referral_code := UPPER(SUBSTRING(MD5(COALESCE(NEW.email, '') || NEW.id::text || random()::text) FROM 1 FOR 8));
   END LOOP;
   
   -- Create profile with admin role for specific email
+  -- Use ON CONFLICT to handle race conditions
   INSERT INTO public.profiles (user_id, email, role, referral_code)
   VALUES (
     NEW.id,
-    NEW.email,
+    COALESCE(NEW.email, ''),
     CASE 
-      WHEN LOWER(NEW.email) = LOWER('warrenokumu98@gmail.com') THEN 'admin'
+      WHEN LOWER(COALESCE(NEW.email, '')) = LOWER('warrenokumu98@gmail.com') THEN 'admin'
       ELSE 'user'
     END,
     user_referral_code
-  );
+  )
+  ON CONFLICT (user_id) DO NOTHING;
   
-  -- Create initial mining stats
-  INSERT INTO public.mining_stats (user_id)
-  VALUES (NEW.id);
+  -- Create initial mining stats (only if profile was created)
+  -- Use ON CONFLICT to handle if stats already exist
+  INSERT INTO public.mining_stats (user_id, hash_rate, total_mined, daily_earnings, available_balance)
+  VALUES (NEW.id, 0, 0, 0, 0)
+  ON CONFLICT (user_id) DO NOTHING;
   
   RETURN NEW;
+EXCEPTION
+  WHEN others THEN
+    -- Log the error but don't fail the user creation
+    RAISE WARNING 'Error in handle_new_user trigger: %', SQLERRM;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
