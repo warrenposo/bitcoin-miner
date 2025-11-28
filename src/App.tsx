@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { FloatingContactButtons } from "@/components/FloatingContactButtons";
 import Index from "./pages/Index";
 import Login from "./pages/Signin";
 import Signup from "./pages/Signup";
@@ -30,6 +31,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <FloatingContactButtons />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />

@@ -78,7 +78,7 @@ const CookiePolicy = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-white">8. Contact Us</h2>
             <p>
-              If you have any questions about our use of cookies, please contact us at [email protected]
+              If you have any questions about our use of cookies, please contact us at btcminingbase@gmail.com
             </p>
           </section>
 

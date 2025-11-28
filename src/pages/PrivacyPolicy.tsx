@@ -95,7 +95,7 @@ const PrivacyPolicy = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-white">10. Contact Us</h2>
             <p>
-              If you have any questions about this Privacy Policy, please contact us at [email protected]
+              If you have any questions about this Privacy Policy, please contact us at btcminingbase@gmail.com
             </p>
           </section>
 

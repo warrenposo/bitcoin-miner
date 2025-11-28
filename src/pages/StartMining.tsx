@@ -1026,7 +1026,7 @@ const StartMining = () => {
                         </li>
                         <li className="flex items-center gap-2">
                           <span>✉️</span>
-                          <span>[email protected]</span>
+                          <span>btcminingbase@gmail.com</span>
                         </li>
                         <li className="flex items-center gap-2">
                           <span>📍</span>

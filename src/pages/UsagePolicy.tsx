@@ -64,7 +64,7 @@ const UsagePolicy = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-white">7. Contact Information</h2>
             <p>
-              For questions about this Usage Policy, please contact us at [email protected]
+              For questions about this Usage Policy, please contact us at btcminingbase@gmail.com
             </p>
           </section>
 
