@@ -378,10 +378,6 @@ const Dashboard = () => {
   };
 
 
-  const latestPlans = [
-    { order: '#00145', name: 'Starter Plan', totalDays: 15, remaining: 15, status: 'Pending' },
-    { order: '#00112', name: 'Silver Plan', totalDays: 30, remaining: 7, status: 'Running' },
-  ];
 
   const formatCurrency = (value?: number) => {
     if (value === undefined || value === null) return '0.00 USD';
@@ -2078,76 +2074,6 @@ const Dashboard = () => {
                 <Button className="w-full bg-yellow-500 text-black hover:bg-yellow-400">{copy.appDownload}</Button>
               </CardContent>
             </Card>
-          </section>
-
-          <section className="rounded-2xl border border-white/5 bg-[#111B2D]/70 p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-white">Latest Purchased Plans</h3>
-              <Button variant="ghost" className="text-yellow-400">
-                View All <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-white/80">
-                <thead className="text-white/60">
-                  <tr>
-                    <th className="py-3">Order</th>
-                    <th>Scheme Name</th>
-                    <th>Total Days</th>
-                    <th>Remaining Days</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {latestPlans.map((plan) => (
-                    <tr key={plan.order} className="border-t border-white/5">
-                      <td className="py-3">{plan.order}</td>
-                      <td>{plan.name}</td>
-                      <td>{plan.totalDays}</td>
-                      <td>{plan.remaining}</td>
-                      <td>
-                        <span className="rounded-full bg-yellow-500/20 px-3 py-1 text-xs text-yellow-400">{plan.status}</span>
-                      </td>
-                      <td>
-                        <button className="text-yellow-400">View</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-8 rounded-xl border border-white/5 p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h4 className="text-lg font-semibold text-white">Active Miner</h4>
-                <Button 
-                  variant="ghost" 
-                  className="text-yellow-400"
-                  onClick={() => navigate('/start-mining')}
-                >
-                  Start Mining
-                </Button>
-              </div>
-              <div className="grid gap-4 text-sm text-white/70 md:grid-cols-4">
-                <div>
-                  <p className="text-white/50">Wallet Name</p>
-                  <p>No miner connection</p>
-                </div>
-                <div>
-                  <p className="text-white/50">Miner status</p>
-                  <p>Disconnected</p>
-                </div>
-                <div>
-                  <p className="text-white/50">Block Hash</p>
-                  <p>—</p>
-                </div>
-                <div>
-                  <p className="text-white/50">Balance</p>
-                  <p>0.00 USD</p>
-                </div>
-              </div>
-            </div>
           </section>
 
           <section className="grid gap-6 lg:grid-cols-2">
