@@ -167,7 +167,7 @@ const StartMining = () => {
       id: 'basic',
       name: 'BASIC',
       price: 200,
-      duration: 90,
+      duration: 7,
       hardware: 'Antminer S19',
       totalMining: { btc: 0.008938, usd: 650.30 },
       available: 4000,
@@ -178,7 +178,7 @@ const StartMining = () => {
       id: 'economy',
       name: 'ECONOMY',
       price: 400,
-      duration: 2,
+      duration: 7,
       hardware: 'Antminer S19',
       totalMining: { btc: 0.030351, usd: 1200.00 },
       referralRewards: 72.8,
@@ -190,7 +190,7 @@ const StartMining = () => {
       id: 'standart',
       name: 'STANDARD',
       price: 2400,
-      duration: 365,
+      duration: 90,
       hardware: 'Antminer S19',
       dailyMining: { btc: 0.003734, usd: 407.50 },
       monthlyMining: { btc: 0.112030, usd: 12225.00 },
@@ -203,7 +203,7 @@ const StartMining = () => {
       id: 'senior',
       name: 'SENIOR',
       price: 6500,
-      duration: 365,
+      duration: 90,
       hardware: 'Antminer S19',
       dailyMining: { btc: 0.015652, usd: 1708.00 },
       monthlyMining: { btc: 0.469563, usd: 51240.00 },
@@ -216,7 +216,7 @@ const StartMining = () => {
       id: 'advanced',
       name: 'ADVANCED',
       price: 12600,
-      duration: 365,
+      duration: 90,
       hardware: 'Antminer S19',
       dailyMining: { btc: 0.042764, usd: 4666.50 },
       monthlyMining: { btc: 1.282913, usd: 139995.00 },
@@ -901,12 +901,6 @@ const StartMining = () => {
                             <span>Referral Rewards: {plan.referralRewards} USDT</span>
                           </div>
                         )}
-                        <div className="flex items-center gap-2 text-white/80 text-sm">
-                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                          <span>
-                            Purchase Agreement: <span className="text-red-400 cursor-pointer hover:underline">View all</span>
-                          </span>
-                        </div>
 
                         {/* Progress Bar */}
                         <div className="space-y-1">
