@@ -2097,15 +2097,6 @@ const Dashboard = () => {
                 </Button>
               </CardContent>
             </Card>
-            <Card className="border-white/5 bg-[#111B2D]/70">
-              <CardHeader>
-                <CardTitle className="text-white">Download App</CardTitle>
-                <CardDescription className="text-white/60">Manage mining on mobile</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full bg-yellow-500 text-black hover:bg-yellow-400">{copy.appDownload}</Button>
-              </CardContent>
-            </Card>
           </section>
 
           <section className="grid gap-6 lg:grid-cols-2">
