@@ -22,6 +22,12 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { UserSidebar } from '@/components/UserSidebar';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 type DepositView = 'deposit' | 'log';
 type DepositStage = 'form' | 'preview' | 'payment';
@@ -66,7 +72,7 @@ const gatewayOptions: GatewayOption[] = [
     label: 'USDT.TRC20',
     currency: 'USDT',
     network: 'TRC20',
-    min: 50,
+    min: 100,
     max: 250000,
     description: 'Fast & low cost payments on Tron network',
   },
@@ -145,6 +151,32 @@ const Deposit = () => {
     if (initialView) {
       sessionStorage.removeItem('/deposit_view');
     }
+    
+    // Check for pre-filled amount from sessionStorage
+    const depositAmount = sessionStorage.getItem('deposit_amount');
+    if (depositAmount) {
+      const amountValue = parseFloat(depositAmount);
+      if (!isNaN(amountValue) && amountValue > 0) {
+        // Find a suitable gateway that can handle this amount
+        const suitableGateway = gatewayOptions.find(
+          (option) => amountValue >= option.min && amountValue <= option.max
+        );
+        
+        // If a suitable gateway is found, set it first to establish limits
+        if (suitableGateway) {
+          setGateway(suitableGateway.value);
+          setLimit({ min: suitableGateway.min, max: suitableGateway.max });
+        }
+        
+        // Then set the amount
+        setAmount(depositAmount);
+        const calculatedCharge = amountValue * 0.02;
+        setCharge(calculatedCharge);
+        setPayable(amountValue + calculatedCharge);
+        setIsPreFilledAmount(true);
+        sessionStorage.removeItem('deposit_amount');
+      }
+    }
   }, [initialView]);
 
   // Listen for view changes from menu when already on this page
@@ -184,6 +216,8 @@ const Deposit = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [deposits, setDeposits] = useState<any[]>([]);
+  const [showPaymentConfirmationModal, setShowPaymentConfirmationModal] = useState(false);
+  const [isPreFilledAmount, setIsPreFilledAmount] = useState(false);
 
   const selectedGatewayOption = useMemo(
     () => gatewayOptions.find((option) => option.value === gateway),
@@ -201,15 +235,32 @@ const Deposit = () => {
     const calculatedCharge = numericAmount * 0.02;
     setCharge(calculatedCharge);
     setPayable(numericAmount + calculatedCharge);
+    // If user manually changes amount, it's no longer pre-filled
+    if (isPreFilledAmount && value !== amount) {
+      setIsPreFilledAmount(false);
+    }
   };
 
   const handleGatewayChange = (value: GatewayValue) => {
     setGateway(value);
     const config = gatewayOptions.find((option) => option.value === value);
     setLimit(config ? { min: config.min, max: config.max } : { min: 0, max: 0 });
-    setAmount('');
-    setCharge(0);
-    setPayable(0);
+    
+    // Only reset amount if it wasn't pre-filled
+    if (!isPreFilledAmount) {
+      setAmount('');
+      setCharge(0);
+      setPayable(0);
+    } else {
+      // Recalculate charge and payable for pre-filled amount
+      const currentAmount = parseFloat(amount) || 0;
+      if (currentAmount > 0) {
+        const calculatedCharge = currentAmount * 0.02;
+        setCharge(calculatedCharge);
+        setPayable(currentAmount + calculatedCharge);
+      }
+    }
+    
     setDepositStage('form');
     setPreviewData(null);
     setActiveDeposit(null);
@@ -531,8 +582,8 @@ const Deposit = () => {
                           onChange={(e) => handleAmountChange(e.target.value)}
                           placeholder="Enter amount"
                           className="h-12 flex-1 border-white/10 bg-[#0B1421] text-white"
-                          min={limit.min}
-                          max={limit.max}
+                          min={limit.min > 0 ? limit.min : undefined}
+                          max={limit.max > 0 ? limit.max : undefined}
                           step="0.01"
                         />
                         <Button type="button" className="h-12 bg-yellow-500 px-6 text-black hover:bg-yellow-400">
@@ -699,10 +750,59 @@ const Deposit = () => {
                         Scan the QR code or copy the address. The deposit will appear in your log once the payment is
                         detected on-chain.
                       </p>
+                      <Button
+                        onClick={() => setShowPaymentConfirmationModal(true)}
+                        className="mt-6 h-12 w-full bg-yellow-500 text-black hover:bg-yellow-400 font-semibold"
+                      >
+                        I Have Paid
+                      </Button>
                     </div>
                   </div>
                 </div>
               )}
+
+              {/* Payment Confirmation Modal */}
+              <Dialog open={showPaymentConfirmationModal} onOpenChange={setShowPaymentConfirmationModal}>
+                <DialogContent className="bg-[#111B2D] border-yellow-500/50 text-white max-w-md [&>button]:hidden">
+                  <DialogHeader className="relative">
+                    <DialogTitle className="text-white text-xl font-bold mb-4 pr-8">
+                      Payment Submitted
+                    </DialogTitle>
+                    <button
+                      onClick={() => setShowPaymentConfirmationModal(false)}
+                      className="absolute right-4 top-4 w-6 h-6 rounded-full bg-white flex items-center justify-center hover:bg-white/90 transition"
+                    >
+                      <span className="text-red-500 font-bold text-lg leading-none">×</span>
+                    </button>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4">
+                      <p className="text-yellow-400 font-semibold mb-2">⏱️ Processing Time</p>
+                      <p className="text-white/90">
+                        Your payment is being processed. It may take <span className="font-semibold text-yellow-400">1-5 minutes</span> for the balance to reflect in your account.
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-4">
+                      <p className="text-blue-400 font-semibold mb-2">💬 Need Help?</p>
+                      <p className="text-white/90">
+                        If your balance doesn't reflect after 5 minutes, please contact our support team for assistance.
+                      </p>
+                    </div>
+                    <div className="flex gap-3 pt-4">
+                      <Button
+                        onClick={() => {
+                          setShowPaymentConfirmationModal(false);
+                          // Refresh deposits to check status
+                          fetchDeposits();
+                        }}
+                        className="flex-1 bg-yellow-500 text-black hover:bg-yellow-400 font-semibold"
+                      >
+                        OK, I Understand
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           ) : (
             <div className="rounded-lg border border-white/5 bg-[#111B2D] p-6">

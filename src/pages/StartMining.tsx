@@ -342,7 +342,7 @@ const StartMining = () => {
       label: 'USDT.TRC20',
       currency: 'USDT',
       network: 'TRC20',
-      min: 50,
+      min: 100,
       max: 250000,
       description: 'Fast & low cost payments on Tron network',
     },
@@ -435,13 +435,29 @@ const StartMining = () => {
     }
   };
 
-  const handleBuyPlan = (plan: MiningPlan) => {
+  const handleBuyPlan = async (plan: MiningPlan) => {
+    // Set the selected plan first
     setSelectedPlan(plan);
-    setPurchaseStage('form');
-    // Calculate charge (2% of plan price)
+    
+    // Fetch latest balance before checking
+    await fetchUserBalance();
+    
+    // Calculate total required (plan price + 2% charge)
     const calculatedCharge = plan.price * 0.02;
+    const totalRequired = plan.price + calculatedCharge;
+    
+    // Check if user has sufficient balance
+    if (userBalance < totalRequired) {
+      setRequiredAmount(totalRequired);
+      setShowInsufficientFundsModal(true);
+      // Don't proceed to purchase form yet
+      return;
+    }
+    
+    // User has sufficient balance, proceed with purchase
+    setPurchaseStage('form');
     setCharge(calculatedCharge);
-    setPayable(plan.price + calculatedCharge);
+    setPayable(totalRequired);
     setGateway('');
     setPreviewData(null);
     setActivePurchase(null);
@@ -684,6 +700,37 @@ const StartMining = () => {
   const [selectedPurchasedPlan, setSelectedPurchasedPlan] = useState<PurchasedPlan | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [purchasedPlans, setPurchasedPlans] = useState<PurchasedPlan[]>([]);
+  const [userBalance, setUserBalance] = useState<number>(0);
+  const [showInsufficientFundsModal, setShowInsufficientFundsModal] = useState(false);
+  const [requiredAmount, setRequiredAmount] = useState<number>(0);
+
+  // Fetch user balance
+  const fetchUserBalance = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('mining_stats')
+        .select('total_mined')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      setUserBalance(data?.total_mined || 0);
+    } catch (error) {
+      console.error('Error fetching user balance:', error);
+      setUserBalance(0);
+    }
+  };
+
+  // Fetch balance when user is available
+  useEffect(() => {
+    if (user) {
+      fetchUserBalance();
+    }
+  }, [user]);
 
   // Fetch purchased plans from database
   useEffect(() => {
@@ -1103,6 +1150,69 @@ const StartMining = () => {
               )}
             </div>
           )}
+
+          {/* Insufficient Funds Modal */}
+          <Dialog open={showInsufficientFundsModal} onOpenChange={setShowInsufficientFundsModal}>
+            <DialogContent className="bg-[#111B2D] border-yellow-500/50 text-white max-w-md [&>button]:hidden">
+              <DialogHeader className="relative">
+                <DialogTitle className="text-white text-xl font-bold mb-4 pr-8">
+                  Insufficient Funds
+                </DialogTitle>
+                <button
+                  onClick={() => setShowInsufficientFundsModal(false)}
+                  className="absolute right-4 top-4 w-6 h-6 rounded-full bg-white flex items-center justify-center hover:bg-white/90 transition"
+                >
+                  <span className="text-red-500 font-bold text-lg leading-none">×</span>
+                </button>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-white/80">
+                  You need <span className="font-semibold text-yellow-400">${requiredAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> to purchase this plan.
+                </p>
+                <p className="text-white/80">
+                  Your current balance: <span className="font-semibold">${userBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </p>
+                <p className="text-white/80">
+                  You need to deposit <span className="font-semibold text-yellow-400">${(requiredAmount - userBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> more.
+                </p>
+                <div className="flex flex-col gap-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      // Store amount in sessionStorage for deposit page
+                      sessionStorage.setItem('deposit_amount', requiredAmount.toString());
+                      setShowInsufficientFundsModal(false);
+                      navigate('/deposit');
+                    }}
+                    className="w-full bg-yellow-500 text-black hover:bg-yellow-400 font-semibold"
+                  >
+                    Go to Deposit Page
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      // Navigate to deposit page with pre-filled amount
+                      sessionStorage.setItem('deposit_amount', requiredAmount.toString());
+                      setShowInsufficientFundsModal(false);
+                      navigate('/deposit');
+                    }}
+                    variant="outline"
+                    className="w-full border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                  >
+                    Continue with Payment Gateway
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowInsufficientFundsModal(false);
+                      setSelectedPlan(null);
+                    }}
+                    variant="outline"
+                    className="w-full border-white/20 text-white hover:bg-white/10"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Plan Details Dialog */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
