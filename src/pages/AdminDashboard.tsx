@@ -237,7 +237,7 @@ const AdminDashboard = () => {
           <div className="flex items-center gap-2 sm:gap-3">
             <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-400" />
             <div>
-              <p className="text-xs sm:text-sm text-white/50">CryptoMine Pro</p>
+              <p className="text-xs sm:text-sm text-white/50">BTC Mining Base</p>
               <p className="text-base sm:text-lg font-semibold">Admin Control Center</p>
             </div>
           </div>

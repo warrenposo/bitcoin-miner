@@ -1,5 +1,5 @@
 -- ============================================
--- CryptoMine Pro Database Schema
+-- BTC Mining Base Database Schema
 -- Run this in your Supabase SQL Editor
 -- ============================================
 

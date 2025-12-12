@@ -45,7 +45,7 @@ export const Navbar = () => {
             className="flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md px-1"
           >
             <Zap className="w-6 h-6 text-primary" />
-            <span className="text-xl font-bold text-primary">CryptoMine Pro</span>
+            <span className="text-xl font-bold text-primary">BTC Mining Base</span>
           </button>
           <Button
             size="sm"

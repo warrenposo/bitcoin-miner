@@ -117,7 +117,7 @@ const Login = () => {
         <Card className="shadow-2xl border border-white/10 bg-[#050C1A]/80 backdrop-blur">
           <CardHeader className="text-center pb-6">
             <CardTitle className="text-2xl font-bold text-white">Welcome Back</CardTitle>
-            <CardDescription className="text-white/60">Sign in to access your CryptoMine Pro dashboard</CardDescription>
+            <CardDescription className="text-white/60">Sign in to access your BTC Mining Base dashboard</CardDescription>
           </CardHeader>
 
           {authError && (
@@ -227,7 +227,7 @@ const Login = () => {
         </Card>
 
         <div className="text-center text-xs text-white/40">
-          <p>Need help? Contact support@cryptominepro.com • PCI Compliant • ISO 27001 Certified</p>
+          <p>Need help? Contact support@btcminingbase.com • PCI Compliant • ISO 27001 Certified</p>
         </div>
       </div>
     </div>
