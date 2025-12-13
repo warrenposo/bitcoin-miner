@@ -125,7 +125,7 @@ const StartMining = () => {
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
   const [selectedCurrency, setSelectedCurrency] = useState<'BTC' | 'LTC'>('BTC');
-  const [btcPrice, setBtcPrice] = useState(109122.76);
+  const [btcPrice, setBtcPrice] = useState(118421.05);
   const [ltcPrice, setLtcPrice] = useState(88.12);
   
   // Purchase flow state
@@ -158,7 +158,7 @@ const StartMining = () => {
       price: 70,
       duration: 7,
       hardware: 'Antminer S19',
-      totalMining: { btc: 0.001347, usd: 350.00 },
+      totalMining: { btc: 0.001347, usd: 159.51 },
       available: 4000,
       sold: 652,
       currency: 'BTC',
@@ -169,7 +169,7 @@ const StartMining = () => {
       price: 200,
       duration: 7,
       hardware: 'Antminer S19',
-      totalMining: { btc: 0.008938, usd: 650.30 },
+      totalMining: { btc: 0.008938, usd: 1059.25 },
       available: 4000,
       sold: 452,
       currency: 'BTC',
@@ -180,7 +180,7 @@ const StartMining = () => {
       price: 400,
       duration: 7,
       hardware: 'Antminer S19',
-      totalMining: { btc: 0.030351, usd: 1200.00 },
+      totalMining: { btc: 0.030351, usd: 3595.12 },
       referralRewards: 72.8,
       available: 3000,
       sold: 2154,
@@ -192,8 +192,8 @@ const StartMining = () => {
       price: 2400,
       duration: 90,
       hardware: 'Antminer S19',
-      dailyMining: { btc: 0.003734, usd: 407.50 },
-      monthlyMining: { btc: 0.112030, usd: 12225.00 },
+      dailyMining: { btc: 0.003734, usd: 442.58 },
+      monthlyMining: { btc: 0.112030, usd: 13275.00 },
       referralRewards: 240,
       available: 2000,
       sold: 1096,
@@ -205,8 +205,8 @@ const StartMining = () => {
       price: 6500,
       duration: 90,
       hardware: 'Antminer S19',
-      dailyMining: { btc: 0.015652, usd: 1708.00 },
-      monthlyMining: { btc: 0.469563, usd: 51240.00 },
+      dailyMining: { btc: 0.015652, usd: 1855.00 },
+      monthlyMining: { btc: 0.469563, usd: 55695.00 },
       referralRewards: 650,
       available: 1000,
       sold: 800,
@@ -218,8 +218,8 @@ const StartMining = () => {
       price: 12600,
       duration: 90,
       hardware: 'Antminer S19',
-      dailyMining: { btc: 0.042764, usd: 4666.50 },
-      monthlyMining: { btc: 1.282913, usd: 139995.00 },
+      dailyMining: { btc: 0.042764, usd: 5071.00 },
+      monthlyMining: { btc: 1.282913, usd: 152130.00 },
       referralRewards: 1260,
       available: 800,
       sold: 461,
@@ -231,8 +231,8 @@ const StartMining = () => {
       price: 32000,
       duration: 365,
       hardware: 'Antminer S19',
-      dailyMining: { btc: 0.119498, usd: 13040.00 },
-      monthlyMining: { btc: 3.584953, usd: 391200.00 },
+      dailyMining: { btc: 0.119498, usd: 14180.00 },
+      monthlyMining: { btc: 3.584953, usd: 424800.00 },
       referralRewards: 3200,
       available: 300,
       sold: 177,
@@ -244,8 +244,8 @@ const StartMining = () => {
       price: 72000,
       duration: 365,
       hardware: 'Antminer S19',
-      dailyMining: { btc: 0.445645, usd: 48630.00 },
-      monthlyMining: { btc: 13.3693, usd: 1458900.00 },
+      dailyMining: { btc: 0.445645, usd: 52800.00 },
+      monthlyMining: { btc: 13.3693, usd: 1585200.00 },
       referralRewards: 7200,
       available: 300,
       sold: 174,
@@ -257,8 +257,8 @@ const StartMining = () => {
       price: 169800,
       duration: 365,
       hardware: 'Antminer S19',
-      dailyMining: { btc: 0.995393, usd: 108620.00 },
-      monthlyMining: { btc: 29.8618, usd: 3258600.00 },
+      dailyMining: { btc: 0.995393, usd: 117960.00 },
+      monthlyMining: { btc: 29.8618, usd: 3541200.00 },
       referralRewards: 16980,
       available: 300,
       sold: 278,
@@ -979,47 +979,29 @@ const StartMining = () => {
               {purchaseStage === 'form' && !selectedPlan && (
                 <div className="mt-12">
                 <h2 className="text-2xl font-bold text-center mb-8">Our Partners</h2>
-                <div className="grid grid-cols-5 gap-4">
+                <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
                   {[
-                    { name: 'Google', logo: 'https://logo.clearbit.com/google.com', domain: 'google.com' },
-                    { name: 'Forbes', logo: 'https://logo.clearbit.com/forbes.com', domain: 'forbes.com' },
-                    { name: 'Yahoo!', logo: 'https://logo.clearbit.com/yahoo.com', domain: 'yahoo.com' },
-                    { name: 'YouTube', logo: 'https://logo.clearbit.com/youtube.com', domain: 'youtube.com' },
-                    { name: 'BINANCE', logo: 'https://logo.clearbit.com/binance.com', domain: 'binance.com' },
-                    { name: 'Coinbase', logo: 'https://logo.clearbit.com/coinbase.com', domain: 'coinbase.com' },
-                    { name: 'CoinPedia', logo: 'https://logo.clearbit.com/coinpedia.org', domain: 'coinpedia.org' },
-                    { name: 'AMBCRYPTO', logo: 'https://logo.clearbit.com/ambcrypto.com', domain: 'ambcrypto.com' },
-                    { name: 'BENZINGA', logo: 'https://logo.clearbit.com/benzinga.com', domain: 'benzinga.com' },
-                    { name: 'CoinGape', logo: 'https://logo.clearbit.com/coingape.com', domain: 'coingape.com' },
-                    { name: 'GlobeNewswire', logo: 'https://logo.clearbit.com/globenewswire.com', domain: 'globenewswire.com' },
-                    { name: 'cryptonews', logo: 'https://logo.clearbit.com/cryptonews.com', domain: 'cryptonews.com' },
-                    { name: 'Analytics Insight', logo: 'https://logo.clearbit.com/analyticsinsight.net', domain: 'analyticsinsight.net' },
-                    { name: 'SOURCEFORGE', logo: 'https://logo.clearbit.com/sourceforge.net', domain: 'sourceforge.net' },
-                    { name: 'MarketWatch', logo: 'https://logo.clearbit.com/marketwatch.com', domain: 'marketwatch.com' },
+                    { name: 'Google' },
+                    { name: 'Forbes' },
+                    { name: 'Yahoo!' },
+                    { name: 'YouTube' },
+                    { name: 'BINANCE' },
+                    { name: 'Coinbase' },
+                    { name: 'CoinPedia' },
+                    { name: 'AMBCRYPTO' },
+                    { name: 'BENZINGA' },
+                    { name: 'CoinGape' },
+                    { name: 'GlobeNewswire' },
+                    { name: 'cryptonews' },
+                    { name: 'Analytics Insight' },
+                    { name: 'SOURCEFORGE' },
+                    { name: 'MarketWatch' },
                   ].map((partner) => (
                     <div 
                       key={partner.name} 
-                      className="bg-white rounded p-4 flex items-center justify-center h-20 hover:bg-gray-50 transition relative"
+                      className="bg-white rounded-lg p-4 flex items-center justify-center h-20 hover:bg-gray-50 transition shadow-sm border border-gray-200"
                     >
-                      <img 
-                        src={partner.logo} 
-                        alt={partner.name}
-                        className="max-w-full max-h-full object-contain"
-                        loading="lazy"
-                        onError={(e) => {
-                          // Fallback to text if image fails to load
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const parent = target.parentElement;
-                          if (parent && !parent.querySelector('.fallback-text')) {
-                            const fallback = document.createElement('span');
-                            fallback.className = 'fallback-text text-gray-600 text-xs font-semibold text-center';
-                            fallback.textContent = partner.name;
-                            parent.appendChild(fallback);
-                          }
-                        }}
-                      />
-                      <span className="fallback-text text-gray-600 text-xs font-semibold text-center hidden">
+                      <span className="text-gray-700 text-xs font-semibold text-center">
                         {partner.name}
                       </span>
                     </div>
