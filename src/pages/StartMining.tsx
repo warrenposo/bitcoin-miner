@@ -180,7 +180,7 @@ const StartMining = () => {
       price: 400,
       duration: 7,
       hardware: 'Antminer S19',
-      totalMining: { btc: 0.005, usd: 1300.37 },
+      totalMining: { btc: 0.005, usd: 1800.37 },
       referralRewards: 72.8,
       available: 3000,
       sold: 2154,
