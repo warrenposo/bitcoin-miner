@@ -128,6 +128,40 @@ const StartMining = () => {
   const [btcPrice, setBtcPrice] = useState(90073.63);
   const [ltcPrice, setLtcPrice] = useState(88.12);
   
+  // Fetch current prices from CoinGecko
+  const fetchCryptoPrices = async () => {
+    try {
+      const response = await fetch(
+        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,litecoin&vs_currencies=usd'
+      );
+      const data = await response.json();
+      
+      if (data?.bitcoin?.usd) {
+        setBtcPrice(data.bitcoin.usd);
+      }
+      if (data?.litecoin?.usd) {
+        setLtcPrice(data.litecoin.usd);
+      }
+    } catch (error) {
+      console.error('Error fetching crypto prices:', error);
+      // Keep using the default/hardcoded values if fetch fails
+    }
+  };
+  
+  // Fetch prices on component mount and set up refresh interval
+  useEffect(() => {
+    // Fetch immediately
+    fetchCryptoPrices();
+    
+    // Refresh prices every 5 minutes (300000 ms)
+    const intervalId = setInterval(() => {
+      fetchCryptoPrices();
+    }, 300000);
+    
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
+  }, []);
+  
   // Purchase flow state
   const [selectedPlan, setSelectedPlan] = useState<MiningPlan | null>(null);
   const [purchaseStage, setPurchaseStage] = useState<PurchaseStage>('form');
@@ -332,7 +366,7 @@ const StartMining = () => {
       label: 'BTC',
       currency: 'BTC',
       network: 'Bitcoin',
-      min: 100,
+      min: 50,
       max: 500000,
       coingeckoId: 'bitcoin',
       description: 'Instant confirmation on Bitcoin network',
@@ -342,7 +376,7 @@ const StartMining = () => {
       label: 'USDT.TRC20',
       currency: 'USDT',
       network: 'TRC20',
-      min: 100,
+      min: 50,
       max: 250000,
       description: 'Fast & low cost payments on Tron network',
     },
@@ -351,7 +385,7 @@ const StartMining = () => {
       label: 'USDT.ERC20',
       currency: 'USDT',
       network: 'ERC20',
-      min: 100,
+      min: 50,
       max: 250000,
       description: 'USDT payments on Ethereum network',
     },
@@ -360,7 +394,7 @@ const StartMining = () => {
       label: 'USDC',
       currency: 'USDC',
       network: 'ERC20',
-      min: 100,
+      min: 50,
       max: 250000,
       description: 'USD Coin payments (1:1 USD)',
     },
@@ -369,7 +403,7 @@ const StartMining = () => {
       label: 'ETH',
       currency: 'ETH',
       network: 'Ethereum',
-      min: 150,
+      min: 50,
       max: 500000,
       coingeckoId: 'ethereum',
       description: 'Native Ethereum deposits',

@@ -108,12 +108,12 @@ export const Footer = () => {
               <li className="flex items-center gap-3">
                 <WhatsAppIcon className="h-5 w-5 text-yellow-400" />
                 <a 
-                  href="https://wa.me/447400734398" 
+                  href="https://wa.me/447449780973" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-white/70 hover:text-yellow-400 transition-colors"
                 >
-                  +44 7400 734398
+                  +44 7449 780973
                 </a>
               </li>
               <li className="flex items-center gap-3">
