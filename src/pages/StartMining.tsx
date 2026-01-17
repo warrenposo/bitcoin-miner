@@ -332,32 +332,6 @@ const StartMining = () => {
       sold: 177,
       currency: 'BTC',
     },
-    {
-      id: 'vip1',
-      name: 'Vip 1',
-      price: 72000,
-      duration: 365,
-      hardware: 'Antminer S19',
-      dailyMining: { btc: 0.05, usd: 4503.68 },
-      monthlyMining: { btc: 1.5, usd: 135110.45 },
-      referralRewards: 7200,
-      available: 300,
-      sold: 174,
-      currency: 'BTC',
-    },
-    {
-      id: 'vip3',
-      name: 'VIP3',
-      price: 169800,
-      duration: 365,
-      hardware: 'Antminer S19',
-      dailyMining: { btc: 0.1, usd: 9007.36 },
-      monthlyMining: { btc: 3.0, usd: 270220.89 },
-      referralRewards: 16980,
-      available: 300,
-      sold: 278,
-      currency: 'BTC',
-    },
   ];
 
   // LTC Plans
