@@ -98,6 +98,7 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
       subItems: [
         { label: 'Buy Plan', path: '/start-mining', view: 'buy' },
         { label: 'Purchased Plans', path: '/start-mining', view: 'purchased' },
+        { label: 'Mining', path: '/start-mining', view: 'mining' },
       ],
     },
     {

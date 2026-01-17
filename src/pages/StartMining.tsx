@@ -134,8 +134,8 @@ const StartMining = () => {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   // Check if there's a view preference from navigation
-  const initialView = (sessionStorage.getItem('/start-mining_view') as 'buy' | 'purchased') || 'buy';
-  const [activeView, setActiveView] = useState<'buy' | 'purchased'>(initialView);
+  const initialView = (sessionStorage.getItem('/start-mining_view') as 'buy' | 'purchased' | 'mining') || 'buy';
+  const [activeView, setActiveView] = useState<'buy' | 'purchased' | 'mining'>(initialView);
   // Initialize language from localStorage if available, otherwise default to 'en'
   const [language, setLanguage] = useState<LanguageKey>(() => {
     const storedLang = localStorage.getItem('selectedLanguage') as LanguageKey;
@@ -156,8 +156,8 @@ const StartMining = () => {
   useEffect(() => {
     const checkView = () => {
       const storedView = sessionStorage.getItem('/start-mining_view');
-      if (storedView && (storedView === 'buy' || storedView === 'purchased')) {
-        setActiveView(storedView as 'buy' | 'purchased');
+      if (storedView && (storedView === 'buy' || storedView === 'purchased' || storedView === 'mining')) {
+        setActiveView(storedView as 'buy' | 'purchased' | 'mining');
         sessionStorage.removeItem('/start-mining_view');
       }
     };
@@ -168,8 +168,8 @@ const StartMining = () => {
     // Also listen for storage events (when navigating from same page)
     const handleStorage = (e: StorageEvent) => {
       if (e.key === '/start-mining_view' && e.newValue) {
-        if (e.newValue === 'buy' || e.newValue === 'purchased') {
-          setActiveView(e.newValue as 'buy' | 'purchased');
+        if (e.newValue === 'buy' || e.newValue === 'purchased' || e.newValue === 'mining') {
+          setActiveView(e.newValue as 'buy' | 'purchased' | 'mining');
         }
       }
       // Sync language changes from other pages
@@ -771,6 +771,12 @@ const StartMining = () => {
   const [userBalance, setUserBalance] = useState<number>(0);
   const [showInsufficientFundsModal, setShowInsufficientFundsModal] = useState(false);
   const [requiredAmount, setRequiredAmount] = useState<number>(0);
+  const [miningLogs, setMiningLogs] = useState<string[]>([]);
+  const [currentHashRate, setCurrentHashRate] = useState(15);
+  const [currentShares, setCurrentShares] = useState(19);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showStartSessionModal, setShowStartSessionModal] = useState(false);
+  const [miningProgress] = useState(75);
 
   // Fetch user balance
   const fetchUserBalance = async () => {
@@ -853,8 +859,8 @@ const StartMining = () => {
   };
 
   const handleViewChange = (view: string) => {
-    if (view === 'buy' || view === 'purchased') {
-      setActiveView(view as 'buy' | 'purchased');
+    if (view === 'buy' || view === 'purchased' || view === 'mining') {
+      setActiveView(view as 'buy' | 'purchased' | 'mining');
       // Clear sessionStorage if it was set
       sessionStorage.removeItem('/start-mining_view');
     }
@@ -864,8 +870,8 @@ const StartMining = () => {
   useEffect(() => {
     const handleViewChangeEvent = (e: CustomEvent) => {
       const view = e.detail?.view;
-      if (view === 'buy' || view === 'purchased') {
-        setActiveView(view as 'buy' | 'purchased');
+      if (view === 'buy' || view === 'purchased' || view === 'mining') {
+        setActiveView(view as 'buy' | 'purchased' | 'mining');
       }
     };
     
@@ -873,11 +879,91 @@ const StartMining = () => {
     return () => window.removeEventListener('viewchange', handleViewChangeEvent as EventListener);
   }, []);
 
+  // Mining animation effect - continuously add logs showing address checking
+  useEffect(() => {
+    if (activeView !== 'mining') return;
+
+    // Initial logs
+    const initialLogs = [
+      '[2026-01-17 19:34:27] Switched to Tether mining',
+      '$ cryptohash-miner --start --algo=sha256d --coin=USDT --target=100 --payout=0xd239b1cb8f...a89d63',
+      '[2026-01-17 19:34:28] Initializing mining session...',
+      '[2026-01-17 19:34:28] Payout address: 0xd239b1cb8f...a89d63',
+      '[2026-01-17 19:34:29] Subscribing to mining.subscribe...',
+      '[2026-01-17 19:34:30] Authorized worker=cryptohash.4c74',
+      '[2026-01-17 19:34:31] Loading DAG to GPU memory...',
+    ];
+    setMiningLogs(initialLogs);
+
+    // Address pool for rotation
+    const addresses = [
+      '0xd239b1cb8f7a3e5b6c9d2f4a1b8c7e6d5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0',
+      '0x8a3f2e1c9d7b5a4e3f2c1d0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0',
+      '0x5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e',
+      '0x3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c',
+      '0x1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a',
+      '0xf9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9',
+    ];
+
+    let logCounter = initialLogs.length;
+    let addressIndex = 0;
+    let jobCounter = 1;
+
+    const intervalId = setInterval(() => {
+      const now = new Date();
+      const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
+
+      // Rotate through different log types
+      const logTypes = [
+        () => `[${timestamp}] Checking address: ${addresses[addressIndex % addresses.length].substring(0, 20)}...`,
+        () => `[${timestamp}] Processing block candidate #${jobCounter++}`,
+        () => `[${timestamp}] Hash found! Nonce: 0x${Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0')}`,
+        () => `[${timestamp}] Submitting share to pool...`,
+        () => `[${timestamp}] Share accepted! Difficulty: ${(Math.random() * 10 + 1).toFixed(2)}`,
+        () => `[${timestamp}] New job received from stratum server`,
+        () => `[${timestamp}] Checking next address in queue: ${addresses[(addressIndex + 1) % addresses.length].substring(0, 20)}...`,
+        () => `[${timestamp}] GPU0: ${Math.floor(Math.random() * 20 + 55)}°C ${Math.floor(Math.random() * 15 + 80)}% ${Math.floor(Math.random() * 50 + 180)}W`,
+        () => `[${timestamp}] GPU1: ${Math.floor(Math.random() * 20 + 55)}°C ${Math.floor(Math.random() * 15 + 80)}% ${Math.floor(Math.random() * 50 + 200)}W`,
+      ];
+
+      const newLog = logTypes[logCounter % logTypes.length]();
+      setMiningLogs((prev) => {
+        const updated = [...prev, newLog];
+        // Keep only last 50 logs
+        const sliced = updated.slice(-50);
+        
+        // Auto-scroll to bottom
+        setTimeout(() => {
+          const container = document.getElementById('mining-log-container');
+          if (container) {
+            container.scrollTop = container.scrollHeight;
+          }
+        }, 100);
+        
+        return sliced;
+      });
+
+      if (logCounter % 2 === 0) {
+        addressIndex++;
+      }
+
+      // Update hash rate and shares more frequently
+      if (logCounter % 3 === 0) {
+        setCurrentHashRate((prev) => Math.max(10, Math.min(20, prev + Math.random() * 0.5 - 0.25)));
+        setCurrentShares((prev) => prev + 1);
+      }
+
+      logCounter++;
+    }, 300); // Add new log every 0.3 seconds
+
+    return () => clearInterval(intervalId);
+  }, [activeView]);
+
   return (
     <div className="min-h-screen bg-[#0B1421] text-white">
       <div className="flex">
         <UserSidebar 
-          activeView={activeView === 'buy' ? 'buy' : activeView === 'purchased' ? 'purchased' : undefined}
+          activeView={activeView === 'buy' ? 'buy' : activeView === 'purchased' ? 'purchased' : activeView === 'mining' ? 'mining' : undefined}
           onViewChange={handleViewChange}
           onSignOut={handleSignOut}
         />
@@ -894,7 +980,9 @@ const StartMining = () => {
                     : purchaseStage === 'payment'
                     ? 'Scan & Pay'
                     : 'Buy Plan'
-                  : 'Purchased Plans'}
+                  : activeView === 'purchased'
+                  ? 'Purchased Plans'
+                  : 'Mining'}
               </h1>
             </div>
             <div className="flex items-center gap-2 lg:gap-4">
@@ -921,14 +1009,14 @@ const StartMining = () => {
                   Deutsch
                 </option>
               </select>
-              <Button
-                variant="outline"
-                className="border-rose-500 text-rose-400 hover:bg-rose-500/10 text-sm px-3 lg:px-4"
-                onClick={handleSignOut}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
+            <Button
+              variant="outline"
+              className="border-rose-500 text-rose-400 hover:bg-rose-500/10 text-sm px-3 lg:px-4"
+              onClick={handleSignOut}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
             </div>
           </header>
 
@@ -1154,7 +1242,7 @@ const StartMining = () => {
                 </footer>
               )}
             </div>
-          ) : (
+          ) : activeView === 'purchased' ? (
             /* Purchased Plans View */
             <div className="bg-[#111B2D] border border-white/5 rounded-lg overflow-hidden">
               {purchasedPlans.length === 0 ? (
@@ -1224,7 +1312,178 @@ const StartMining = () => {
                 </div>
               )}
             </div>
-          )}
+          ) : activeView === 'mining' ? (
+            /* Mining View */
+            <div className="space-y-6">
+              {/* Terminal-like Log Output */}
+              <div className="bg-[#111B2D] border border-white/10 rounded-lg p-4 font-mono text-xs overflow-hidden">
+                <div className="bg-[#0F1A2B] px-3 py-2 border-b border-white/10 mb-3 rounded-t">
+                  <span className="text-green-400">miner@cryptohash</span>
+                  <span className="text-white/60"> ~ </span>
+                  <span className="text-yellow-400">stratum+tcp:</span>
+                </div>
+                <div className="space-y-1 text-white/80 max-h-64 overflow-y-auto" id="mining-log-container">
+                  {miningLogs.length > 0 ? (
+                    miningLogs.map((log, index) => {
+                      const isGreen = log.includes('Checking address') || log.includes('Processing block') || log.includes('Hash found') || log.includes('Submitting share') || log.includes('Share accepted') || log.includes('New job') || log.includes('Initializing') || log.includes('Authorized') || log.includes('Loading');
+                      const isYellow = log.includes('GPU') || log.includes('MEM:');
+                      const isCommand = log.startsWith('$');
+                      return (
+                        <div 
+                          key={index} 
+                          className={isGreen ? 'text-green-400' : isYellow ? 'text-yellow-400' : isCommand ? 'text-white/50' : 'text-white/60'}
+                          style={{ animation: 'fadeIn 0.3s ease-in' }}
+                        >
+                          {log}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <>
+                      <div className="text-white/50">[2026-01-17 19:34:27] Switched to Tether mining</div>
+                      <div className="text-white/50">$ cryptohash-miner --start --algo=sha256d --coin=USDT --target=100 --payout=0xd239b1cb8f...a89d63</div>
+                      <div className="text-green-400">[2026-01-17 19:34:28] Initializing mining session...</div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Mining Statistics */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-[#111B2D] border border-white/10 rounded-lg p-6 text-center">
+                  <div className="text-3xl font-bold text-yellow-400 mb-2">0</div>
+                  <div className="text-white/60 text-sm">MINED</div>
+                </div>
+                <div className="bg-[#111B2D] border border-white/10 rounded-lg p-6 text-center">
+                  <div className="text-3xl font-bold text-yellow-400 mb-2">0</div>
+                  <div className="text-white/60 text-sm">TARGET</div>
+                </div>
+                <div className="bg-[#111B2D] border border-white/10 rounded-lg p-6 text-center">
+                  <div className="text-3xl font-bold text-yellow-400 mb-2">{currentHashRate.toFixed(1)} TH/s</div>
+                  <div className="text-white/60 text-sm">HASHRATE</div>
+                </div>
+                <div className="bg-[#111B2D] border border-white/10 rounded-lg p-6 text-center">
+                  <div className="text-3xl font-bold text-yellow-400 mb-2">{currentShares}</div>
+                  <div className="text-white/60 text-sm">SHARES</div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button
+                  onClick={() => {
+                    setShowStartSessionModal(true);
+                  }}
+                  className="flex-1 bg-yellow-500 text-black hover:bg-yellow-400 font-semibold text-lg py-6"
+                >
+                  Start New Session
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowWithdrawModal(true);
+                  }}
+                  variant="outline"
+                  className="flex-1 border-white/20 text-white hover:bg-white/10 font-semibold text-lg py-6"
+                >
+                  Withdraw
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Withdraw Modal */}
+          <Dialog open={showWithdrawModal} onOpenChange={setShowWithdrawModal}>
+            <DialogContent className="bg-[#111B2D] border-yellow-500/50 text-white max-w-md [&>button]:hidden">
+              <DialogHeader className="relative">
+                <DialogTitle className="text-white text-xl font-bold mb-4 pr-8">
+                  Start Mining Session
+                </DialogTitle>
+                <button
+                  onClick={() => setShowWithdrawModal(false)}
+                  className="absolute right-4 top-4 w-6 h-6 rounded-full bg-white flex items-center justify-center hover:bg-white/90 transition"
+                >
+                  <span className="text-red-500 font-bold text-lg leading-none">×</span>
+                </button>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-white/80">
+                  Start a new session to mine and withdraw.
+                </p>
+                <div className="flex flex-col gap-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      setShowWithdrawModal(false);
+                      setShowStartSessionModal(true);
+                    }}
+                    className="w-full bg-yellow-500 text-black hover:bg-yellow-400 font-semibold"
+                  >
+                    Start New Session
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowWithdrawModal(false);
+                    }}
+                    variant="outline"
+                    className="w-full border-white/20 text-white hover:bg-white/10"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Start New Session Modal */}
+          <Dialog open={showStartSessionModal} onOpenChange={setShowStartSessionModal}>
+            <DialogContent className="bg-[#111B2D] border-yellow-500/50 text-white max-w-md [&>button]:hidden">
+              <DialogHeader className="relative">
+                <DialogTitle className="text-white text-xl font-bold mb-4 pr-8">
+                  Purchase Plan Required
+                </DialogTitle>
+                <button
+                  onClick={() => setShowStartSessionModal(false)}
+                  className="absolute right-4 top-4 w-6 h-6 rounded-full bg-white flex items-center justify-center hover:bg-white/90 transition"
+                >
+                  <span className="text-red-500 font-bold text-lg leading-none">×</span>
+                </button>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-white/80">
+                  Purchase a plan to start a new session.
+                </p>
+                <div className="flex flex-col gap-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      setShowStartSessionModal(false);
+                      setActiveView('buy');
+                    }}
+                    className="w-full bg-yellow-500 text-black hover:bg-yellow-400 font-semibold"
+                  >
+                    Go to Buy Plan Page
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowStartSessionModal(false);
+                      navigate('/deposit');
+                    }}
+                    variant="outline"
+                    className="w-full border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                  >
+                    Go to Deposit Page
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowStartSessionModal(false);
+                    }}
+                    variant="outline"
+                    className="w-full border-white/20 text-white hover:bg-white/10"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Insufficient Funds Modal */}
           <Dialog open={showInsufficientFundsModal} onOpenChange={setShowInsufficientFundsModal}>
