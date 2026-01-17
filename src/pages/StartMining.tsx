@@ -85,12 +85,65 @@ interface PreviewData {
   plan: MiningPlan;
 }
 
+const translations = {
+  en: {
+    hardware: 'Hardware',
+    contractDuration: 'Contract duration',
+    totalMining: 'Total mining',
+    dailyMining: 'Daily mining',
+    monthlyMining: 'Monthly mining',
+    referralRewards: 'Referral Rewards',
+    day: 'day',
+    days: 'days',
+  },
+  es: {
+    hardware: 'Hardware',
+    contractDuration: 'Duración del contrato',
+    totalMining: 'Minería total',
+    dailyMining: 'Minería diaria',
+    monthlyMining: 'Minería mensual',
+    referralRewards: 'Recompensas por referencia',
+    day: 'día',
+    days: 'días',
+  },
+  fr: {
+    hardware: 'Matériel',
+    contractDuration: 'Durée du contrat',
+    totalMining: 'Mining total',
+    dailyMining: 'Mining quotidien',
+    monthlyMining: 'Mining mensuel',
+    referralRewards: 'Récompenses de parrainage',
+    day: 'jour',
+    days: 'jours',
+  },
+  de: {
+    hardware: 'Hardware',
+    contractDuration: 'Vertragsdauer',
+    totalMining: 'Gesamt-Mining',
+    dailyMining: 'Tägliches Mining',
+    monthlyMining: 'Monatliches Mining',
+    referralRewards: 'Empfehlungsprämien',
+    day: 'Tag',
+    days: 'Tage',
+  },
+};
+
+type LanguageKey = keyof typeof translations;
+
 const StartMining = () => {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   // Check if there's a view preference from navigation
   const initialView = (sessionStorage.getItem('/start-mining_view') as 'buy' | 'purchased') || 'buy';
   const [activeView, setActiveView] = useState<'buy' | 'purchased'>(initialView);
+  // Initialize language from localStorage if available, otherwise default to 'en'
+  const [language, setLanguage] = useState<LanguageKey>(() => {
+    const storedLang = localStorage.getItem('selectedLanguage') as LanguageKey;
+    return storedLang && translations[storedLang] ? storedLang : 'en';
+  });
+  
+  // Update translations object reference based on current language
+  const t = translations[language];
   
   // Clear the view preference after using it
   useEffect(() => {
@@ -117,6 +170,13 @@ const StartMining = () => {
       if (e.key === '/start-mining_view' && e.newValue) {
         if (e.newValue === 'buy' || e.newValue === 'purchased') {
           setActiveView(e.newValue as 'buy' | 'purchased');
+        }
+      }
+      // Sync language changes from other pages
+      if (e.key === 'selectedLanguage' && e.newValue) {
+        const newLang = e.newValue as LanguageKey;
+        if (translations[newLang]) {
+          setLanguage(newLang);
         }
       }
     };
@@ -863,14 +923,39 @@ const StartMining = () => {
                   : 'Purchased Plans'}
               </h1>
             </div>
-            <Button
-              variant="outline"
-              className="border-rose-500 text-rose-400 hover:bg-rose-500/10 text-sm px-3 lg:px-4"
-              onClick={handleSignOut}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
+            <div className="flex items-center gap-2 lg:gap-4">
+              {/* Language Selector */}
+              <select
+                className="hidden sm:block rounded-md bg-transparent px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10"
+                value={language}
+                onChange={(e) => {
+                  const newLang = e.target.value as LanguageKey;
+                  setLanguage(newLang);
+                  localStorage.setItem('selectedLanguage', newLang);
+                }}
+              >
+                <option className="text-black" value="en">
+                  English
+                </option>
+                <option className="text-black" value="es">
+                  Español
+                </option>
+                <option className="text-black" value="fr">
+                  Français
+                </option>
+                <option className="text-black" value="de">
+                  Deutsch
+                </option>
+              </select>
+              <Button
+                variant="outline"
+                className="border-rose-500 text-rose-400 hover:bg-rose-500/10 text-sm px-3 lg:px-4"
+                onClick={handleSignOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </header>
 
           {activeView === 'buy' ? (
@@ -946,17 +1031,17 @@ const StartMining = () => {
                       <CardContent className="p-4 space-y-3">
                         <div className="flex items-center gap-2 text-white/80 text-sm">
                           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                          <span>Hardware: {plan.hardware}</span>
+                          <span>{t.hardware}: {plan.hardware}</span>
                         </div>
                         <div className="flex items-center gap-2 text-white/80 text-sm">
                           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                          <span>Contract duration: {plan.duration} {plan.duration === 1 ? 'day' : 'days'}</span>
+                          <span>{t.contractDuration}: {plan.duration} {plan.duration === 1 ? t.day : t.days}</span>
                         </div>
                         {plan.totalMining && (
                           <div className="flex items-center gap-2 text-white/80 text-sm">
                             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                             <span>
-                              Total mining: {plan.totalMining.btc?.toFixed(6) || plan.totalMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.totalMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {t.totalMining}: {plan.totalMining.btc?.toFixed(6) || plan.totalMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.totalMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}
@@ -964,7 +1049,7 @@ const StartMining = () => {
                           <div className="flex items-center gap-2 text-white/80 text-sm">
                             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                             <span>
-                              Daily mining: {plan.dailyMining.btc?.toFixed(6) || plan.dailyMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.dailyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {t.dailyMining}: {plan.dailyMining.btc?.toFixed(6) || plan.dailyMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.dailyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}
@@ -972,14 +1057,14 @@ const StartMining = () => {
                           <div className="flex items-center gap-2 text-white/80 text-sm">
                             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                             <span>
-                              Monthly mining: {plan.monthlyMining.btc?.toFixed(6) || plan.monthlyMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.monthlyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {t.monthlyMining}: {plan.monthlyMining.btc?.toFixed(6) || plan.monthlyMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.monthlyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}
                         {plan.referralRewards && (
                           <div className="flex items-center gap-2 text-white/80 text-sm">
                             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                            <span>Referral Rewards: {plan.referralRewards} USDT</span>
+                            <span>{t.referralRewards}: {plan.referralRewards} USDT</span>
                           </div>
                         )}
 

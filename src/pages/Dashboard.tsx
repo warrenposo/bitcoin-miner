@@ -122,7 +122,11 @@ const Dashboard = () => {
   const [showTicketForm, setShowTicketForm] = useState(false);
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
-  const [language, setLanguage] = useState<LanguageKey>('en');
+  // Initialize language from localStorage if available, otherwise default to 'en'
+  const [language, setLanguage] = useState<LanguageKey>(() => {
+    const storedLang = localStorage.getItem('selectedLanguage') as LanguageKey;
+    return storedLang && translations[storedLang] ? storedLang : 'en';
+  });
   // Check for view from sessionStorage (set by navigation)
   const initialView = (sessionStorage.getItem('dashboard_view') as any) || 'dashboard';
   const [activeView, setActiveView] = useState<'dashboard' | 'my-referrals' | 'referral-bonus-logs' | 'withdraw-logs' | 'create-tickets' | 'all-tickets' | 'profile' | 'wallets' | '2fa-security' | 'change-password' | 'team' | 'about-us'>(initialView);
@@ -459,7 +463,11 @@ const Dashboard = () => {
             <select
               className="hidden sm:block rounded-md bg-transparent px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10"
               value={language}
-              onChange={(e) => setLanguage(e.target.value as LanguageKey)}
+              onChange={(e) => {
+                const newLang = e.target.value as LanguageKey;
+                setLanguage(newLang);
+                localStorage.setItem('selectedLanguage', newLang);
+              }}
             >
               <option className="text-black" value="en">
                 English
