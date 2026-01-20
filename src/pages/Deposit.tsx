@@ -28,6 +28,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import btcQR from '@/assets/btc.jpeg';
+import erc20QR from '@/assets/Erc 20.jpeg';
+import ethQR from '@/assets/Eth.jpeg';
+import trc20QR from '@/assets/Trc 20.jpeg';
 
 type DepositView = 'deposit' | 'log';
 type DepositStage = 'form' | 'preview' | 'payment';
@@ -107,11 +111,11 @@ const gatewayOptions: GatewayOption[] = [
 ];
 
 const fallbackAddresses: Record<GatewayValue, string> = {
-  btc: 'bc1qnsevl9qcuamz2yr2dkpzlazxpumt2cp6t35cqw',
-  'usdt-trc20': 'TWGPadUHsM2RwKDvmjsJZnDdox53YiGHS5',
-  'usdt-erc20': '0x9997f208AA1641C41eD400e7311Ed708CFa10eC8',
-  usdc: '0x9997f208AA1641C41eD400e7311Ed708CFa10eC8',
-  eth: '0x9997f208AA1641C41eD400e7311Ed708CFa10eC8',
+  btc: '163JAZy3CEz8YoNGDDtu9KxpXgnm5Kn9Rs',
+  'usdt-trc20': 'THaAnBqAvQ3YY751nXqNDzCoczYVQtBKnP',
+  'usdt-erc20': '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690',
+  usdc: '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690',
+  eth: '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690',
 };
 
 const formatUSD = (value: number) =>
@@ -727,20 +731,31 @@ const Deposit = () => {
                         </button>
                       </div>
                       <div className="mt-6 flex flex-col items-center gap-4">
-                        <div className="rounded-xl border border-white/10 bg-white p-4">
-                          <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-                              getPaymentURI(
-                                activeDeposit.gateway as GatewayValue,
-                                activeDeposit.deposit_address,
-                                typeof activeDeposit.crypto_amount === 'string'
-                                  ? parseFloat(activeDeposit.crypto_amount)
-                                  : activeDeposit.crypto_amount || 0
-                              )
-                            )}`}
-                            alt="Payment QR"
-                            className="h-48 w-48 object-contain"
-                          />
+                        <div>
+                          {(() => {
+                            // Map gateways to their QR code images from assets
+                            const getQRCodeImage = () => {
+                              const gateway = activeDeposit.gateway as GatewayValue;
+                              
+                              const qrCodeMap: Record<GatewayValue, string> = {
+                                'btc': btcQR,
+                                'usdt-trc20': trc20QR,
+                                'usdt-erc20': erc20QR,
+                                'usdc': erc20QR, // USDC uses ERC20 network
+                                'eth': ethQR,
+                              };
+                              
+                              return qrCodeMap[gateway] || btcQR;
+                            };
+                            
+                            return (
+                              <img
+                                src={getQRCodeImage()}
+                                alt="Payment QR"
+                                className="h-48 w-48 object-contain"
+                              />
+                            );
+                          })()}
                         </div>
                         <p className="text-sm text-white/60">
                           Amount: {formatUSD(activeDeposit.payable)} | Network: {activeDeposit.network}
