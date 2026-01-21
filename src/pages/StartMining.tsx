@@ -184,23 +184,18 @@ const StartMining = () => {
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
-  const [selectedCurrency, setSelectedCurrency] = useState<'BTC' | 'LTC'>('BTC');
   const [btcPrice, setBtcPrice] = useState(90073.63);
-  const [ltcPrice, setLtcPrice] = useState(88.12);
   
   // Fetch current prices from CoinGecko
   const fetchCryptoPrices = async () => {
     try {
       const response = await fetch(
-        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,litecoin&vs_currencies=usd'
+        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'
       );
       const data = await response.json();
       
       if (data?.bitcoin?.usd) {
         setBtcPrice(data.bitcoin.usd);
-      }
-      if (data?.litecoin?.usd) {
-        setLtcPrice(data.litecoin.usd);
       }
     } catch (error) {
       console.error('Error fetching crypto prices:', error);
@@ -334,60 +329,8 @@ const StartMining = () => {
     },
   ];
 
-  // LTC Plans
-  const ltcPlans: MiningPlan[] = [
-    {
-      id: 'activity-award',
-      name: 'Activity Award',
-      price: 200,
-      duration: 365,
-      hardware: 'Antminer L3+',
-      dailyMining: { ltc: 0.076033, usd: 6.70 },
-      monthlyMining: { ltc: 2.280997, usd: 201.00 },
-      available: 5000,
-      sold: 1977,
-      currency: 'LTC',
-    },
-    {
-      id: 'basic-ltc',
-      name: 'BASIC',
-      price: 1000,
-      duration: 365,
-      hardware: 'Antminer L3+',
-      dailyMining: { ltc: 0.465278, usd: 41.00 },
-      monthlyMining: { ltc: 13.958343, usd: 1230.00 },
-      available: 3000,
-      sold: 2817,
-      currency: 'LTC',
-    },
-    {
-      id: 'standart-ltc',
-      name: 'STANDARD',
-      price: 3000,
-      duration: 365,
-      hardware: 'Antminer L3+',
-      dailyMining: { ltc: 2.360435, usd: 208.00 },
-      monthlyMining: { ltc: 70.813056, usd: 6240.00 },
-      available: 1000,
-      sold: 971,
-      currency: 'LTC',
-    },
-    {
-      id: 'luxurious-ltc',
-      name: 'LUXURIOUS',
-      price: 15000,
-      duration: 365,
-      hardware: 'Antminer L3+',
-      dailyMining: { ltc: 18.384159, usd: 1620.00 },
-      monthlyMining: { ltc: 551.524765, usd: 48600.00 },
-      available: 500,
-      sold: 470,
-      currency: 'LTC',
-    },
-  ];
-
-  const currentPlans = selectedCurrency === 'BTC' ? btcPlans : ltcPlans;
-  const currentPrice = selectedCurrency === 'BTC' ? btcPrice : ltcPrice;
+  const currentPlans = btcPlans;
+  const currentPrice = btcPrice;
 
   const handleSignOut = async () => {
     await signOut();
@@ -662,13 +605,10 @@ const StartMining = () => {
             duration: selectedPlan.duration,
             hardware: selectedPlan.hardware,
             daily_mining_btc: selectedPlan.dailyMining?.btc,
-            daily_mining_ltc: selectedPlan.dailyMining?.ltc,
             daily_mining_usd: selectedPlan.dailyMining?.usd,
             monthly_mining_btc: selectedPlan.monthlyMining?.btc,
-            monthly_mining_ltc: selectedPlan.monthlyMining?.ltc,
             monthly_mining_usd: selectedPlan.monthlyMining?.usd,
             total_mining_btc: selectedPlan.totalMining?.btc,
-            total_mining_ltc: selectedPlan.totalMining?.ltc,
             total_mining_usd: selectedPlan.totalMining?.usd,
             referral_rewards: selectedPlan.referralRewards,
             available: selectedPlan.available,
@@ -683,7 +623,7 @@ const StartMining = () => {
       }
 
       // Calculate return per day (min and max based on plan)
-      const returnPerDayMin = selectedPlan.dailyMining?.btc || selectedPlan.dailyMining?.ltc || 0;
+      const returnPerDayMin = selectedPlan.dailyMining?.btc || 0;
       const returnPerDayMax = returnPerDayMin * 1.5; // Assume 50% variance
 
       // Create user_plans record
@@ -1045,30 +985,13 @@ const StartMining = () => {
                 </div>
               </div>
 
-              {/* Currency Tabs */}
+              {/* BTC Price Display */}
               <div className="flex gap-4 items-center">
-                <button
-                  onClick={() => setSelectedCurrency('BTC')}
-                  className={`px-6 py-3 rounded-lg font-semibold transition ${
-                    selectedCurrency === 'BTC'
-                      ? 'bg-yellow-500 text-black'
-                      : 'bg-[#0F1A2B] text-white/70 hover:text-white'
-                  }`}
-                >
+                <div className="px-6 py-3 rounded-lg font-semibold bg-yellow-500 text-black">
                   BTC
-                </button>
-                <button
-                  onClick={() => setSelectedCurrency('LTC')}
-                  className={`px-6 py-3 rounded-lg font-semibold transition ${
-                    selectedCurrency === 'LTC'
-                      ? 'bg-yellow-500 text-black'
-                      : 'bg-[#0F1A2B] text-white/70 hover:text-white'
-                  }`}
-                >
-                  LTC
-                </button>
-                <div className="ml-4 text-lg font-semibold">
-                  {selectedCurrency}≈${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div className="text-lg font-semibold">
+                  BTC≈${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
 
@@ -1103,7 +1026,7 @@ const StartMining = () => {
                           <div className="flex items-center gap-2 text-white/80 text-sm">
                             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                             <span>
-                              {t.totalMining}: {plan.totalMining.btc?.toFixed(6) || plan.totalMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.totalMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {t.totalMining}: {plan.totalMining.btc?.toFixed(6)} BTC=${plan.totalMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}
@@ -1111,7 +1034,7 @@ const StartMining = () => {
                           <div className="flex items-center gap-2 text-white/80 text-sm">
                             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                             <span>
-                              {t.dailyMining}: {plan.dailyMining.btc?.toFixed(6) || plan.dailyMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.dailyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {t.dailyMining}: {plan.dailyMining.btc?.toFixed(6)} BTC=${plan.dailyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}
@@ -1119,7 +1042,7 @@ const StartMining = () => {
                           <div className="flex items-center gap-2 text-white/80 text-sm">
                             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                             <span>
-                              {t.monthlyMining}: {plan.monthlyMining.btc?.toFixed(6) || plan.monthlyMining.ltc?.toFixed(6)} {selectedCurrency}=${plan.monthlyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {t.monthlyMining}: {plan.monthlyMining.btc?.toFixed(6)} BTC=${plan.monthlyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}
