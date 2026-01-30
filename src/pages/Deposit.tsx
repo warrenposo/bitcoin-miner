@@ -28,10 +28,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import btcQR from '@/assets/btc.jpeg';
-import erc20QR from '@/assets/Erc 20.jpeg';
-import ethQR from '@/assets/Eth.jpeg';
-import trc20QR from '@/assets/Trc 20.jpeg';
+import btcQR from '@/assets/btc 1.jpeg';
+import erc20QR from '@/assets/erc 20 1.jpeg';
+import ethQR from '@/assets/etherium.jpeg';
+import trc20QR from '@/assets/trc 20 1.jfif';
 
 type DepositView = 'deposit' | 'log';
 type DepositStage = 'form' | 'preview' | 'payment';
@@ -111,11 +111,11 @@ const gatewayOptions: GatewayOption[] = [
 ];
 
 const fallbackAddresses: Record<GatewayValue, string> = {
-  btc: '163JAZy3CEz8YoNGDDtu9KxpXgnm5Kn9Rs',
-  'usdt-trc20': 'THaAnBqAvQ3YY751nXqNDzCoczYVQtBKnP',
-  'usdt-erc20': '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690',
-  usdc: '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690',
-  eth: '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690',
+  btc: 'bc1qnsevl9qcuamz2yr2dkpzlazxpumt2cp6t35cqw',
+  'usdt-trc20': 'TWGPadUHsM2RwKDvmjsJZnDdox53YiGHS5',
+  'usdt-erc20': '0x9997f208AA1641C41eD400e7311Ed708CFa10eC8',
+  usdc: '0x9997f208AA1641C41eD400e7311Ed708CFa10eC8',
+  eth: '0x9997f208AA1641C41eD400e7311Ed708CFa10eC8',
 };
 
 const formatUSD = (value: number) =>
