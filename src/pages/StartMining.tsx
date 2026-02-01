@@ -423,11 +423,11 @@ const StartMining = () => {
   ];
 
   const fallbackAddresses: Record<GatewayValue, string> = {
-    btc: '163JAZy3CEz8YoNGDDtu9KxpXgnm5Kn9Rs',
-    'usdt-trc20': 'THaAnBqAvQ3YY751nXqNDzCoczYVQtBKnP',
-    'usdt-erc20': '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690',
-    usdc: '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690',
-    eth: '0x8c0fd3fdc6f56e658fb1bffa8f5ddd65388ba690',
+    btc: 'bc1q8wchmdhvxatty6evk8gjh0cfg262jr0tuwkn9x',
+    'usdt-trc20': 'TGtTjW3Vso5Rcxx3BGcpQmeq72MMz2MxZ1',
+    'usdt-erc20': '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05',
+    usdc: '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05',
+    eth: '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05',
   };
 
   const selectedGatewayOption = useMemo(
