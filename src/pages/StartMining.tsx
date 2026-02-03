@@ -141,10 +141,10 @@ const StartMining = () => {
     const storedLang = localStorage.getItem('selectedLanguage') as LanguageKey;
     return storedLang && translations[storedLang] ? storedLang : 'en';
   });
-  
+
   // Update translations object reference based on current language
   const t = translations[language];
-  
+
   // Clear the view preference after using it
   useEffect(() => {
     if (initialView) {
@@ -161,10 +161,10 @@ const StartMining = () => {
         sessionStorage.removeItem('/start-mining_view');
       }
     };
-    
+
     // Check immediately
     checkView();
-    
+
     // Also listen for storage events (when navigating from same page)
     const handleStorage = (e: StorageEvent) => {
       if (e.key === '/start-mining_view' && e.newValue) {
@@ -180,12 +180,12 @@ const StartMining = () => {
         }
       }
     };
-    
+
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
   const [btcPrice, setBtcPrice] = useState(90073.63);
-  
+
   // Fetch current prices from CoinGecko
   const fetchCryptoPrices = async () => {
     try {
@@ -193,7 +193,7 @@ const StartMining = () => {
         'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'
       );
       const data = await response.json();
-      
+
       if (data?.bitcoin?.usd) {
         setBtcPrice(data.bitcoin.usd);
       }
@@ -202,21 +202,21 @@ const StartMining = () => {
       // Keep using the default/hardcoded values if fetch fails
     }
   };
-  
+
   // Fetch prices on component mount and set up refresh interval
   useEffect(() => {
     // Fetch immediately
     fetchCryptoPrices();
-    
+
     // Refresh prices every 5 minutes (300000 ms)
     const intervalId = setInterval(() => {
       fetchCryptoPrices();
     }, 300000);
-    
+
     // Cleanup interval on unmount
     return () => clearInterval(intervalId);
   }, []);
-  
+
   // Purchase flow state
   const [selectedPlan, setSelectedPlan] = useState<MiningPlan | null>(null);
   const [purchaseStage, setPurchaseStage] = useState<PurchaseStage>('form');
@@ -233,7 +233,7 @@ const StartMining = () => {
     {
       id: 'promotions',
       name: 'PROMOTIONS',
-      price: 50,
+      price: 70,
       duration: 1,
       hardware: 'Antminer S19',
       totalMining: { btc: 0.00249, usd: 225.04 },
@@ -244,8 +244,8 @@ const StartMining = () => {
     {
       id: 'new-beginner',
       name: 'NEW BEGINNER',
-      price: 70,
-      duration: 7,
+      price: 100,
+      duration: 3,
       hardware: 'Antminer S19',
       totalMining: { btc: 0.00720, usd: 650.07 },
       available: 4000,
@@ -378,7 +378,7 @@ const StartMining = () => {
       label: 'BTC',
       currency: 'BTC',
       network: 'Bitcoin',
-      min: 50,
+      min: 70,
       max: 500000,
       coingeckoId: 'bitcoin',
       description: 'Instant confirmation on Bitcoin network',
@@ -388,7 +388,7 @@ const StartMining = () => {
       label: 'USDT.TRC20',
       currency: 'USDT',
       network: 'TRC20',
-      min: 50,
+      min: 70,
       max: 250000,
       description: 'Fast & low cost payments on Tron network',
     },
@@ -397,7 +397,7 @@ const StartMining = () => {
       label: 'USDT.ERC20',
       currency: 'USDT',
       network: 'ERC20',
-      min: 50,
+      min: 70,
       max: 250000,
       description: 'USDT payments on Ethereum network',
     },
@@ -406,7 +406,7 @@ const StartMining = () => {
       label: 'USDC',
       currency: 'USDC',
       network: 'ERC20',
-      min: 50,
+      min: 70,
       max: 250000,
       description: 'USD Coin payments (1:1 USD)',
     },
@@ -415,7 +415,7 @@ const StartMining = () => {
       label: 'ETH',
       currency: 'ETH',
       network: 'Ethereum',
-      min: 50,
+      min: 70,
       max: 500000,
       coingeckoId: 'ethereum',
       description: 'Native Ethereum deposits',
@@ -484,14 +484,14 @@ const StartMining = () => {
   const handleBuyPlan = async (plan: MiningPlan) => {
     // Set the selected plan first
     setSelectedPlan(plan);
-    
+
     // Fetch latest balance before checking
     await fetchUserBalance();
-    
+
     // Calculate total required (plan price + 2% charge)
     const calculatedCharge = plan.price * 0.02;
     const totalRequired = plan.price + calculatedCharge;
-    
+
     // Check if user has sufficient balance
     if (userBalance < totalRequired) {
       setRequiredAmount(totalRequired);
@@ -499,7 +499,7 @@ const StartMining = () => {
       // Don't proceed to purchase form yet
       return;
     }
-    
+
     // User has sufficient balance, proceed with purchase
     setPurchaseStage('form');
     setCharge(calculatedCharge);
@@ -694,7 +694,7 @@ const StartMining = () => {
         userPlan: createdUserPlan,
       });
       setPurchaseStage('payment');
-      
+
       toast({
         title: 'Payment created',
         description: 'Please complete the payment to activate your mining plan',
@@ -849,7 +849,7 @@ const StartMining = () => {
         setActiveView(view as 'buy' | 'purchased' | 'mining');
       }
     };
-    
+
     window.addEventListener('viewchange', handleViewChangeEvent as EventListener);
     return () => window.removeEventListener('viewchange', handleViewChangeEvent as EventListener);
   }, []);
@@ -906,7 +906,7 @@ const StartMining = () => {
         const updated = [...prev, newLog];
         // Keep only last 50 logs
         const sliced = updated.slice(-50);
-        
+
         // Auto-scroll to bottom
         setTimeout(() => {
           const container = document.getElementById('mining-log-container');
@@ -914,7 +914,7 @@ const StartMining = () => {
             container.scrollTop = container.scrollHeight;
           }
         }, 100);
-        
+
         return sliced;
       });
 
@@ -937,7 +937,7 @@ const StartMining = () => {
   return (
     <div className="min-h-screen bg-[#0B1421] text-white">
       <div className="flex">
-        <UserSidebar 
+        <UserSidebar
           activeView={activeView === 'buy' ? 'buy' : activeView === 'purchased' ? 'purchased' : activeView === 'mining' ? 'mining' : undefined}
           onViewChange={handleViewChange}
           onSignOut={handleSignOut}
@@ -949,15 +949,15 @@ const StartMining = () => {
           <header className="mb-4 sm:mb-6 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <h1 className="text-xl sm:text-2xl font-semibold">
-                {activeView === 'buy' 
+                {activeView === 'buy'
                   ? purchaseStage === 'preview'
                     ? 'Payment Preview'
                     : purchaseStage === 'payment'
-                    ? 'Scan & Pay'
-                    : 'Buy Plan'
+                      ? 'Scan & Pay'
+                      : 'Buy Plan'
                   : activeView === 'purchased'
-                  ? 'Purchased Plans'
-                  : 'Mining'}
+                    ? 'Purchased Plans'
+                    : 'Mining'}
               </h1>
             </div>
             <div className="flex items-center gap-2 lg:gap-4">
@@ -984,14 +984,14 @@ const StartMining = () => {
                   Deutsch
                 </option>
               </select>
-            <Button
-              variant="outline"
-              className="border-rose-500 text-rose-400 hover:bg-rose-500/10 text-sm px-3 lg:px-4"
-              onClick={handleSignOut}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
+              <Button
+                variant="outline"
+                className="border-rose-500 text-rose-400 hover:bg-rose-500/10 text-sm px-3 lg:px-4"
+                onClick={handleSignOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
             </div>
           </header>
 
@@ -1094,7 +1094,7 @@ const StartMining = () => {
                             <span>{plan.available} / {plan.sold} ({progress.toFixed(1)}%)</span>
                           </div>
                           <div className="relative h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="absolute top-0 left-0 h-full bg-yellow-500 transition-all"
                               style={{ width: `${progress}%` }}
                             ></div>
@@ -1117,36 +1117,36 @@ const StartMining = () => {
               {/* Our Partners Section */}
               {purchaseStage === 'form' && !selectedPlan && (
                 <div className="mt-12">
-                <h2 className="text-2xl font-bold text-center mb-8">Our Partners</h2>
-                <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
-                  {[
-                    { name: 'Google' },
-                    { name: 'Forbes' },
-                    { name: 'Yahoo!' },
-                    { name: 'YouTube' },
-                    { name: 'BINANCE' },
-                    { name: 'Coinbase' },
-                    { name: 'CoinPedia' },
-                    { name: 'AMBCRYPTO' },
-                    { name: 'BENZINGA' },
-                    { name: 'CoinGape' },
-                    { name: 'GlobeNewswire' },
-                    { name: 'cryptonews' },
-                    { name: 'Analytics Insight' },
-                    { name: 'SOURCEFORGE' },
-                    { name: 'MarketWatch' },
-                  ].map((partner) => (
-                    <div 
-                      key={partner.name} 
-                      className="bg-white rounded-lg p-4 flex items-center justify-center h-20 hover:bg-gray-50 transition shadow-sm border border-gray-200"
-                    >
-                      <span className="text-gray-700 text-xs font-semibold text-center">
-                        {partner.name}
-                      </span>
-                    </div>
-                  ))}
+                  <h2 className="text-2xl font-bold text-center mb-8">Our Partners</h2>
+                  <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
+                    {[
+                      { name: 'Google' },
+                      { name: 'Forbes' },
+                      { name: 'Yahoo!' },
+                      { name: 'YouTube' },
+                      { name: 'BINANCE' },
+                      { name: 'Coinbase' },
+                      { name: 'CoinPedia' },
+                      { name: 'AMBCRYPTO' },
+                      { name: 'BENZINGA' },
+                      { name: 'CoinGape' },
+                      { name: 'GlobeNewswire' },
+                      { name: 'cryptonews' },
+                      { name: 'Analytics Insight' },
+                      { name: 'SOURCEFORGE' },
+                      { name: 'MarketWatch' },
+                    ].map((partner) => (
+                      <div
+                        key={partner.name}
+                        className="bg-white rounded-lg p-4 flex items-center justify-center h-20 hover:bg-gray-50 transition shadow-sm border border-gray-200"
+                      >
+                        <span className="text-gray-700 text-xs font-semibold text-center">
+                          {partner.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
               )}
 
               {/* Footer - Only show when not in purchase flow */}
@@ -1240,15 +1240,14 @@ const StartMining = () => {
                           <td className="py-4 px-4 text-white/80">{plan.totalDays}</td>
                           <td className="py-4 px-4 text-white/80">{plan.remainingDays}</td>
                           <td className="py-4 px-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              plan.status === 'pending'
-                                ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50'
-                                : plan.status === 'active'
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${plan.status === 'pending'
+                              ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50'
+                              : plan.status === 'active'
                                 ? 'bg-green-500/20 text-green-400'
                                 : plan.status === 'completed'
-                                ? 'bg-blue-500/20 text-blue-400'
-                                : 'bg-gray-500/20 text-gray-400'
-                            }`}>
+                                  ? 'bg-blue-500/20 text-blue-400'
+                                  : 'bg-gray-500/20 text-gray-400'
+                              }`}>
                               {plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}
                             </span>
                           </td>
@@ -1287,8 +1286,8 @@ const StartMining = () => {
                       const isYellow = log.includes('GPU') || log.includes('MEM:');
                       const isCommand = log.startsWith('$');
                       return (
-                        <div 
-                          key={index} 
+                        <div
+                          key={index}
                           className={isGreen ? 'text-green-400' : isYellow ? 'text-yellow-400' : isCommand ? 'text-white/50' : 'text-white/60'}
                           style={{ animation: 'fadeIn 0.3s ease-in' }}
                         >
@@ -1521,7 +1520,7 @@ const StartMining = () => {
                 </button>
               </DialogHeader>
               {selectedPurchasedPlan && (
-                  <div className="space-y-4">
+                <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-white/70">Purchased Date:</span>
                     <span className="text-white font-medium">{selectedPurchasedPlan.purchasedDate}</span>

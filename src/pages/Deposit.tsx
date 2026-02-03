@@ -66,7 +66,7 @@ const gatewayOptions: GatewayOption[] = [
     label: 'BTC',
     currency: 'BTC',
     network: 'Bitcoin',
-    min: 50,
+    min: 70,
     max: 500000,
     coingeckoId: 'bitcoin',
     description: 'Instant confirmation on Bitcoin network',
@@ -76,7 +76,7 @@ const gatewayOptions: GatewayOption[] = [
     label: 'USDT.TRC20',
     currency: 'USDT',
     network: 'TRC20',
-    min: 50,
+    min: 70,
     max: 250000,
     description: 'Fast & low cost payments on Tron network',
   },
@@ -85,7 +85,7 @@ const gatewayOptions: GatewayOption[] = [
     label: 'USDT.ERC20',
     currency: 'USDT',
     network: 'ERC20',
-    min: 50,
+    min: 70,
     max: 250000,
     description: 'USDT payments on Ethereum network',
   },
@@ -94,7 +94,7 @@ const gatewayOptions: GatewayOption[] = [
     label: 'USDC',
     currency: 'USDC',
     network: 'ERC20',
-    min: 50,
+    min: 70,
     max: 250000,
     description: 'USD Coin payments (1:1 USD)',
   },
@@ -103,7 +103,7 @@ const gatewayOptions: GatewayOption[] = [
     label: 'ETH',
     currency: 'ETH',
     network: 'Ethereum',
-    min: 50,
+    min: 70,
     max: 500000,
     coingeckoId: 'ethereum',
     description: 'Native Ethereum deposits',
@@ -155,7 +155,7 @@ const Deposit = () => {
     if (initialView) {
       sessionStorage.removeItem('/deposit_view');
     }
-    
+
     // Check for pre-filled amount from sessionStorage
     const depositAmount = sessionStorage.getItem('deposit_amount');
     if (depositAmount) {
@@ -165,13 +165,13 @@ const Deposit = () => {
         const suitableGateway = gatewayOptions.find(
           (option) => amountValue >= option.min && amountValue <= option.max
         );
-        
+
         // If a suitable gateway is found, set it first to establish limits
         if (suitableGateway) {
           setGateway(suitableGateway.value);
           setLimit({ min: suitableGateway.min, max: suitableGateway.max });
         }
-        
+
         // Then set the amount
         setAmount(depositAmount);
         const calculatedCharge = amountValue * 0.02;
@@ -192,10 +192,10 @@ const Deposit = () => {
         sessionStorage.removeItem('/deposit_view');
       }
     };
-    
+
     // Check immediately
     checkView();
-    
+
     // Also listen for storage events (when navigating from same page)
     const handleStorage = (e: StorageEvent) => {
       if (e.key === '/deposit_view' && e.newValue) {
@@ -204,7 +204,7 @@ const Deposit = () => {
         }
       }
     };
-    
+
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
@@ -249,7 +249,7 @@ const Deposit = () => {
     setGateway(value);
     const config = gatewayOptions.find((option) => option.value === value);
     setLimit(config ? { min: config.min, max: config.max } : { min: 0, max: 0 });
-    
+
     // Only reset amount if it wasn't pre-filled
     if (!isPreFilledAmount) {
       setAmount('');
@@ -264,7 +264,7 @@ const Deposit = () => {
         setPayable(currentAmount + calculatedCharge);
       }
     }
-    
+
     setDepositStage('form');
     setPreviewData(null);
     setActiveDeposit(null);
@@ -370,7 +370,7 @@ const Deposit = () => {
         setActiveView(view as 'deposit' | 'log');
       }
     };
-    
+
     window.addEventListener('viewchange', handleViewChangeEvent as EventListener);
     return () => window.removeEventListener('viewchange', handleViewChangeEvent as EventListener);
   }, []);
@@ -496,7 +496,7 @@ const Deposit = () => {
   return (
     <div className="min-h-screen bg-[#0B1421] text-white">
       <div className="flex">
-        <UserSidebar 
+        <UserSidebar
           activeView={activeView === 'deposit' ? 'deposit' : activeView === 'log' ? 'log' : undefined}
           onViewChange={handleViewChange}
           onSignOut={handleSignOut}
@@ -512,8 +512,8 @@ const Deposit = () => {
                   ? depositStage === 'preview'
                     ? 'Payment Preview'
                     : depositStage === 'payment'
-                    ? 'Scan & Pay'
-                    : 'Deposit Now'
+                      ? 'Scan & Pay'
+                      : 'Deposit Now'
                   : 'Deposit Log'}
               </h1>
             </div>
@@ -736,7 +736,7 @@ const Deposit = () => {
                             // Map gateways to their QR code images from assets
                             const getQRCodeImage = () => {
                               const gateway = activeDeposit.gateway as GatewayValue;
-                              
+
                               const qrCodeMap: Record<GatewayValue, string> = {
                                 'btc': btcQR,
                                 'usdt-trc20': trc20QR,
@@ -744,10 +744,10 @@ const Deposit = () => {
                                 'usdc': erc20QR, // USDC uses ERC20 network
                                 'eth': ethQR,
                               };
-                              
+
                               return qrCodeMap[gateway] || btcQR;
                             };
-                            
+
                             return (
                               <img
                                 src={getQRCodeImage()}
@@ -864,22 +864,21 @@ const Deposit = () => {
                           <td className="px-4 py-4 text-white/80">
                             {deposit.crypto_amount
                               ? `${formatCrypto(
-                                  typeof deposit.crypto_amount === 'string'
-                                    ? parseFloat(deposit.crypto_amount)
-                                    : deposit.crypto_amount,
-                                  6
-                                )} ${deposit.currency || ''}`
+                                typeof deposit.crypto_amount === 'string'
+                                  ? parseFloat(deposit.crypto_amount)
+                                  : deposit.crypto_amount,
+                                6
+                              )} ${deposit.currency || ''}`
                               : '—'}
                           </td>
                           <td className="px-4 py-4">
                             <span
-                              className={`rounded-full px-3 py-1 text-xs capitalize ${
-                                deposit.status === 'completed'
+                              className={`rounded-full px-3 py-1 text-xs capitalize ${deposit.status === 'completed'
                                   ? 'bg-green-500/20 text-green-400'
                                   : deposit.status === 'pending' || deposit.status === 'processing'
-                                  ? 'bg-yellow-500/20 text-yellow-400'
-                                  : 'bg-red-500/20 text-red-400'
-                              }`}
+                                    ? 'bg-yellow-500/20 text-yellow-400'
+                                    : 'bg-red-500/20 text-red-400'
+                                }`}
                             >
                               {deposit.status}
                             </span>
