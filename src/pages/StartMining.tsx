@@ -1061,7 +1061,7 @@ const StartMining = () => {
                           <div className="flex items-center gap-2 text-white/80 text-sm">
                             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                             <span>
-                              {t.totalMining}: {plan.totalMining.btc?.toFixed(6)} BTC=${plan.totalMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {t.totalMining}: {plan.totalMining.btc?.toFixed(6)} BTC=${((plan.totalMining.btc || 0) * btcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}
@@ -1069,7 +1069,7 @@ const StartMining = () => {
                           <div className="flex items-center gap-2 text-white/80 text-sm">
                             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                             <span>
-                              {t.dailyMining}: {plan.dailyMining.btc?.toFixed(6)} BTC=${plan.dailyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {t.dailyMining}: {plan.dailyMining.btc?.toFixed(6)} BTC=${((plan.dailyMining.btc || 0) * btcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}
@@ -1077,7 +1077,7 @@ const StartMining = () => {
                           <div className="flex items-center gap-2 text-white/80 text-sm">
                             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                             <span>
-                              {t.monthlyMining}: {plan.monthlyMining.btc?.toFixed(6)} BTC=${plan.monthlyMining.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {t.monthlyMining}: {plan.monthlyMining.btc?.toFixed(6)} BTC=${((plan.monthlyMining.btc || 0) * btcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}
