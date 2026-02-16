@@ -412,7 +412,7 @@ INSERT INTO mining_plans (name, currency, price, duration, hardware, total_minin
   ('NEW BEGINNER', 'BTC', 70, 7, 'Antminer S19', 0.00720, 650.07, 4000, 652, TRUE),
   ('BASIC', 'BTC', 200, 7, 'Antminer S19', 0.01329, 1200.18, 4000, 452, TRUE),
   ('ECONOMY', 'BTC', 400, 7, 'Antminer S19', 0.01994, 1800.37, 3000, 2154, TRUE),
-  ('BRONZE', 'BTC', 1000, 30, 'Antminer S19', 0.0333, 3000, 1000, 0, TRUE),
+  ('BRONZE', 'BTC', 1000, 30, 'Antminer S19', 0.08325, 7500, 1000, 0, TRUE),
   ('STANDARD', 'BTC', 2400, 90, 'Antminer S19', NULL, NULL, 2000, 1096, TRUE),
   ('SILVER', 'BTC', 4000, 90, 'Antminer S19', NULL, NULL, 500, 0, TRUE),
   ('SENIOR', 'BTC', 6500, 90, 'Antminer S19', NULL, NULL, 1000, 800, TRUE),
@@ -422,9 +422,9 @@ INSERT INTO mining_plans (name, currency, price, duration, hardware, total_minin
 ON CONFLICT DO NOTHING;
 
 -- Update plans with daily/monthly mining
-UPDATE mining_plans SET daily_mining_btc = 0.001, daily_mining_usd = 90.07, monthly_mining_btc = 0.03, monthly_mining_usd = 2702.21, referral_rewards = 240 WHERE name = 'STANDARD' AND currency = 'BTC';
-UPDATE mining_plans SET daily_mining_btc = 0.0011, daily_mining_usd = 100, monthly_mining_btc = 0.0333, monthly_mining_usd = 3000 WHERE name = 'SILVER' AND currency = 'BTC';
-UPDATE mining_plans SET daily_mining_btc = 0.002, daily_mining_usd = 180.15, monthly_mining_btc = 0.06, monthly_mining_usd = 5404.42, referral_rewards = 650 WHERE name = 'SENIOR' AND currency = 'BTC';
+UPDATE mining_plans SET daily_mining_btc = 0.0025, daily_mining_usd = 225.175, monthly_mining_btc = 0.075, monthly_mining_usd = 6755.525, referral_rewards = 240 WHERE name = 'STANDARD' AND currency = 'BTC';
+UPDATE mining_plans SET daily_mining_btc = 0.00275, daily_mining_usd = 250, monthly_mining_btc = 0.08325, monthly_mining_usd = 7500 WHERE name = 'SILVER' AND currency = 'BTC';
+UPDATE mining_plans SET daily_mining_btc = 0.005, daily_mining_usd = 450.375, monthly_mining_btc = 0.15, monthly_mining_usd = 13511.05, referral_rewards = 650 WHERE name = 'SENIOR' AND currency = 'BTC';
 UPDATE mining_plans SET daily_mining_btc = 0.015, daily_mining_usd = 1351.10, monthly_mining_btc = 0.45, monthly_mining_usd = 40533.13, referral_rewards = 1260 WHERE name = 'ADVANCED' AND currency = 'BTC';
 UPDATE mining_plans SET daily_mining_btc = 0.0185, daily_mining_usd = 1666.67, monthly_mining_btc = 0.555, monthly_mining_usd = 50000 WHERE name = 'GOLD' AND currency = 'BTC';
 UPDATE mining_plans SET daily_mining_btc = 0.03, daily_mining_usd = 2702.21, monthly_mining_btc = 0.9, monthly_mining_usd = 81066.27, referral_rewards = 3200 WHERE name = 'LUXURIOUS' AND currency = 'BTC';

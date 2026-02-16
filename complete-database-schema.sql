@@ -773,18 +773,18 @@ ON CONFLICT DO NOTHING;
 
 -- Update STANDART and above plans with daily/monthly mining
 UPDATE mining_plans SET 
-  daily_mining_btc = 0.003734,
-  daily_mining_usd = 407.50,
-  monthly_mining_btc = 0.112030,
-  monthly_mining_usd = 12225.00,
+  daily_mining_btc = 0.009335,
+  daily_mining_usd = 1018.75,
+  monthly_mining_btc = 0.280075,
+  monthly_mining_usd = 30562.5,
   referral_rewards = 240
 WHERE name = 'STANDART' AND currency = 'BTC';
 
 UPDATE mining_plans SET 
-  daily_mining_btc = 0.015652,
-  daily_mining_usd = 1708.00,
-  monthly_mining_btc = 0.469563,
-  monthly_mining_usd = 51240.00,
+  daily_mining_btc = 0.03913,
+  daily_mining_usd = 4270,
+  monthly_mining_btc = 1.1739075,
+  monthly_mining_usd = 128100,
   referral_rewards = 650
 WHERE name = 'SENIOR' AND currency = 'BTC';
 
