@@ -1836,21 +1836,13 @@ const Dashboard = () => {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   {[
-                    { name: 'Google', logo: 'https://logo.clearbit.com/google.com', domain: 'google.com' },
-                    { name: 'Forbes', logo: 'https://logo.clearbit.com/forbes.com', domain: 'forbes.com' },
-                    { name: 'Yahoo!', logo: 'https://logo.clearbit.com/yahoo.com', domain: 'yahoo.com' },
-                    { name: 'YouTube', logo: 'https://logo.clearbit.com/youtube.com', domain: 'youtube.com' },
-                    { name: 'Binance', logo: 'https://logo.clearbit.com/binance.com', domain: 'binance.com' },
-                    { name: 'Coinbase', logo: 'https://logo.clearbit.com/coinbase.com', domain: 'coinbase.com' },
-                    { name: 'CoinPedia', logo: 'https://logo.clearbit.com/coinpedia.org', domain: 'coinpedia.org' },
-                    { name: 'AMBCrypto', logo: 'https://logo.clearbit.com/ambcrypto.com', domain: 'ambcrypto.com' },
-                    { name: 'Blockzeit', logo: 'https://logo.clearbit.com/blockzeit.com', domain: 'blockzeit.com' },
-                    { name: 'CoinGecko', logo: 'https://logo.clearbit.com/coingecko.com', domain: 'coingecko.com' },
-                    { name: 'Messari', logo: 'https://logo.clearbit.com/messari.io', domain: 'messari.io' },
-                    { name: 'CoinMarketCap', logo: 'https://logo.clearbit.com/coinmarketcap.com', domain: 'coinmarketcap.com' },
-                    { name: 'The Block', logo: 'https://logo.clearbit.com/theblock.co', domain: 'theblock.co' },
-                    { name: 'Chainlink', logo: 'https://logo.clearbit.com/chain.link', domain: 'chain.link' },
-                    { name: 'MarketWatch', logo: 'https://logo.clearbit.com/marketwatch.com', domain: 'marketwatch.com' },
+                    { name: 'Google', logo: 'https://cdn.simpleicons.org/google/4285F4' },
+                    { name: 'YouTube', logo: 'https://cdn.simpleicons.org/youtube/FF0000' },
+                    { name: 'Binance', logo: 'https://cdn.simpleicons.org/binance/F0B90B' },
+                    { name: 'Coinbase', logo: 'https://cdn.simpleicons.org/coinbase/0052FF' },
+                    { name: 'Chainlink', logo: 'https://cdn.simpleicons.org/chainlink/375BD2' },
+                    { name: 'CoinPedia', logo: 'https://cdn.simpleicons.org/bitcoin/F7931A' },
+                    { name: 'AMBCrypto', logo: 'https://cdn.simpleicons.org/bitcoin/F7931A' },
                   ].map((partner) => (
                     <div 
                       key={partner.name} 
@@ -1859,10 +1851,9 @@ const Dashboard = () => {
                       <img 
                         src={partner.logo} 
                         alt={partner.name}
-                        className="max-w-full max-h-full object-contain"
+                        className="max-w-full max-h-full object-contain w-16 h-10"
                         loading="lazy"
                         onError={(e) => {
-                          // Fallback to text if image fails to load
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
                           const parent = target.parentElement;
@@ -1999,12 +1990,12 @@ const Dashboard = () => {
                     <div className="flex items-center gap-3">
                       <WhatsAppIcon className="h-5 w-5 text-yellow-400" />
                       <a 
-                        href="https://wa.me/447449780973" 
+                        href="https://wa.me/447782206891" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-white/70 hover:text-yellow-400 transition-colors"
                       >
-                        +44 7449 780973
+                        +44 7782 206891
                       </a>
                     </div>
                     <div className="flex items-center gap-3">
