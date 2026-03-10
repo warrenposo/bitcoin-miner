@@ -53,6 +53,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const startSession = useCallback((state: MiningSessionState) => {
+    if (state.balanceAtStart <= 0 || state.sessionTarget <= 0) return;
     setSession(state);
     saveSession(state);
   }, []);

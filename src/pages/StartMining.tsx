@@ -1487,13 +1487,18 @@ const StartMining = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  onClick={() => (userBalance > 0 ? handleStartMiningSession() : setShowStartSessionModal(true))}
-                  disabled={isSessionActive}
-                  className="flex-1 bg-yellow-500 text-black hover:bg-yellow-400 font-semibold text-lg py-6 disabled:opacity-60"
-                >
-                  {isSessionActive ? 'Mining...' : 'Start New Session'}
-                </Button>
+                <div className="flex-1 flex flex-col gap-1">
+                  <Button
+                    onClick={() => (userBalance > 0 ? handleStartMiningSession() : setShowStartSessionModal(true))}
+                    disabled={isSessionActive || userBalance <= 0}
+                    className="w-full bg-yellow-500 text-black hover:bg-yellow-400 font-semibold text-lg py-6 disabled:opacity-60 disabled:pointer-events-none"
+                  >
+                    {isSessionActive ? 'Mining...' : 'Start New Session'}
+                  </Button>
+                  {userBalance <= 0 && !isSessionActive && (
+                    <p className="text-white/50 text-xs">Balance must be greater than zero to mine. Deposit first.</p>
+                  )}
+                </div>
                 <Button
                   onClick={() => {
                     setShowWithdrawModal(true);
