@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
   referral_code TEXT UNIQUE,
   referral_balance DECIMAL(18, 8) DEFAULT 0,
+  mining_stop_balance DECIMAL(18, 8) DEFAULT NULL,
   usdt_wallet_address TEXT,
   two_fa_enabled BOOLEAN DEFAULT FALSE,
   two_fa_secret TEXT,
@@ -66,6 +67,21 @@ CREATE TABLE IF NOT EXISTS mining_stats (
   available_balance DECIMAL(18, 8) DEFAULT 0,
   last_updated TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   UNIQUE(user_id)
+);
+
+-- ============================================
+-- MINING SESSIONS TABLE (pull mined coins / history)
+-- ============================================
+CREATE TABLE IF NOT EXISTS mining_sessions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  started_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  ended_at TIMESTAMP WITH TIME ZONE,
+  amount_mined DECIMAL(18, 8) DEFAULT 0 NOT NULL,
+  target_amount DECIMAL(18, 8) NOT NULL,
+  status TEXT NOT NULL DEFAULT 'running' CHECK (status IN ('running', 'completed', 'stopped')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
 -- ============================================
@@ -222,6 +238,7 @@ CREATE TABLE IF NOT EXISTS deposit_addresses (
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE support_tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mining_stats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE mining_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE deposits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE withdrawals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mining_plans ENABLE ROW LEVEL SECURITY;
@@ -266,6 +283,12 @@ CREATE POLICY "Users can update their own stats" ON mining_stats FOR UPDATE USIN
 CREATE POLICY "Admins can view all stats" ON mining_stats FOR SELECT USING (public.is_admin(auth.uid()));
 CREATE POLICY "Admins can update all stats" ON mining_stats FOR UPDATE USING (public.is_admin(auth.uid()));
 CREATE POLICY "Admins can insert mining stats" ON mining_stats FOR INSERT WITH CHECK (public.is_admin(auth.uid()));
+
+-- Mining sessions policies
+CREATE POLICY "Users can view own mining sessions" ON mining_sessions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own mining sessions" ON mining_sessions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own mining sessions" ON mining_sessions FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Admins can view all mining sessions" ON mining_sessions FOR SELECT USING (public.is_admin(auth.uid()));
 
 -- Deposits policies
 CREATE POLICY "Users can view their own deposits" ON deposits FOR SELECT USING (auth.uid() = user_id);
@@ -382,6 +405,8 @@ CREATE INDEX IF NOT EXISTS idx_profiles_referral_code ON profiles(referral_code)
 CREATE INDEX IF NOT EXISTS idx_support_tickets_user_id ON support_tickets(user_id);
 CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status);
 CREATE INDEX IF NOT EXISTS idx_mining_stats_user_id ON mining_stats(user_id);
+CREATE INDEX IF NOT EXISTS idx_mining_sessions_user_id ON mining_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_mining_sessions_started_at ON mining_sessions(started_at DESC);
 CREATE INDEX IF NOT EXISTS idx_deposits_user_id ON deposits(user_id);
 CREATE INDEX IF NOT EXISTS idx_deposits_status ON deposits(status);
 CREATE INDEX IF NOT EXISTS idx_deposits_transaction_id ON deposits(transaction_id);
