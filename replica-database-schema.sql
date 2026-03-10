@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   city TEXT,
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
   referral_code TEXT UNIQUE,
+  referral_balance DECIMAL(18, 8) DEFAULT 0,
   usdt_wallet_address TEXT,
   two_fa_enabled BOOLEAN DEFAULT FALSE,
   two_fa_secret TEXT,
@@ -74,7 +75,7 @@ CREATE TABLE IF NOT EXISTS deposits (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   transaction_id TEXT UNIQUE NOT NULL,
-  gateway TEXT NOT NULL CHECK (gateway IN ('btc', 'usdt-trc20', 'usdt-erc20', 'usdc', 'eth', 'coinbase', 'paypal', 'stripe')),
+  gateway TEXT NOT NULL CHECK (gateway IN ('btc', 'usdt-trc20', 'usdt-erc20', 'usdc', 'eth', 'coinbase', 'paypal', 'stripe', 'solana')),
   amount DECIMAL(18, 2) NOT NULL,
   charge DECIMAL(18, 2) DEFAULT 0,
   payable DECIMAL(18, 2) NOT NULL,
@@ -95,7 +96,7 @@ CREATE TABLE IF NOT EXISTS withdrawals (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   transaction_id TEXT UNIQUE NOT NULL,
-  gateway TEXT NOT NULL CHECK (gateway IN ('btc', 'usdt-trc20', 'usdt-erc20', 'usdc', 'eth')),
+  gateway TEXT NOT NULL CHECK (gateway IN ('btc', 'usdt-trc20', 'usdt-erc20', 'usdc', 'eth', 'solana')),
   amount DECIMAL(18, 2) NOT NULL,
   wallet_address TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'rejected', 'cancelled')),
@@ -205,7 +206,7 @@ CREATE TABLE IF NOT EXISTS user_wallets (
 -- ============================================
 CREATE TABLE IF NOT EXISTS deposit_addresses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  gateway TEXT NOT NULL CHECK (gateway IN ('btc', 'usdt-trc20', 'usdt-erc20', 'usdc', 'eth', 'coinbase', 'paypal', 'stripe')),
+  gateway TEXT NOT NULL CHECK (gateway IN ('btc', 'usdt-trc20', 'usdt-erc20', 'usdc', 'eth', 'coinbase', 'paypal', 'stripe', 'solana')),
   address TEXT NOT NULL,
   qr_code_url TEXT,
   is_active BOOLEAN DEFAULT TRUE,
@@ -264,12 +265,14 @@ CREATE POLICY "Users can view their own stats" ON mining_stats FOR SELECT USING 
 CREATE POLICY "Users can update their own stats" ON mining_stats FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Admins can view all stats" ON mining_stats FOR SELECT USING (public.is_admin(auth.uid()));
 CREATE POLICY "Admins can update all stats" ON mining_stats FOR UPDATE USING (public.is_admin(auth.uid()));
+CREATE POLICY "Admins can insert mining stats" ON mining_stats FOR INSERT WITH CHECK (public.is_admin(auth.uid()));
 
 -- Deposits policies
 CREATE POLICY "Users can view their own deposits" ON deposits FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can create deposits" ON deposits FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Admins can view all deposits" ON deposits FOR SELECT USING (public.is_admin(auth.uid()));
 CREATE POLICY "Admins can update all deposits" ON deposits FOR UPDATE USING (public.is_admin(auth.uid()));
+CREATE POLICY "Admins can create deposits" ON deposits FOR INSERT WITH CHECK (public.is_admin(auth.uid()));
 
 -- Withdrawals policies
 CREATE POLICY "Users can view their own withdrawals" ON withdrawals FOR SELECT USING (auth.uid() = user_id);
@@ -297,6 +300,7 @@ CREATE POLICY "Admins can view all referrals" ON referrals FOR SELECT USING (pub
 CREATE POLICY "Users can view their own commissions" ON referral_commissions FOR SELECT USING (auth.uid() = referrer_id);
 CREATE POLICY "Admins can view all commissions" ON referral_commissions FOR SELECT USING (public.is_admin(auth.uid()));
 CREATE POLICY "Admins can update all commissions" ON referral_commissions FOR UPDATE USING (public.is_admin(auth.uid()));
+CREATE POLICY "Admins can create commissions" ON referral_commissions FOR INSERT WITH CHECK (public.is_admin(auth.uid()));
 
 -- User wallets policies
 CREATE POLICY "Users can view their own wallets" ON user_wallets FOR SELECT USING (auth.uid() = user_id);
@@ -401,7 +405,8 @@ INSERT INTO deposit_addresses (gateway, address, is_active, min_amount, max_amou
   ('usdt-trc20', 'TGtTjW3Vso5Rcxx3BGcpQmeq72MMz2MxZ1', TRUE, NULL, NULL),
   ('usdt-erc20', '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05', TRUE, NULL, NULL),
   ('usdc', '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05', TRUE, NULL, NULL),
-  ('eth', '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05', TRUE, NULL, NULL)
+  ('eth', '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05', TRUE, NULL, NULL),
+  ('solana', 'D26bc2Rh5Ebz5vMxb8dkHKMLJB6YRy4GGapKJWiiqgwc', TRUE, 70, 500000)
 ON CONFLICT DO NOTHING;
 
 -- ============================================

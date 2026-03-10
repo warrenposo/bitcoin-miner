@@ -42,6 +42,7 @@ const TelegramIcon = ({ className }: { className?: string }) => (
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { UserSidebar } from '@/components/UserSidebar';
+import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from '@/constants/contact';
 
 interface MiningStats {
   hash_rate: number;
@@ -163,6 +164,7 @@ const Dashboard = () => {
   const [walletAddress, setWalletAddress] = useState('');
   const [isEditingWallet, setIsEditingWallet] = useState(false);
   const [referralLink, setReferralLink] = useState('');
+  const [referralBalance, setReferralBalance] = useState<number | null>(null);
   const [referralBonusLogs, setReferralBonusLogs] = useState<any[]>([]);
   const [withdrawLogs, setWithdrawLogs] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -249,7 +251,7 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch mining stats
+      // Fetch mining stats (so Balance card shows latest after admin updates)
       const { data: stats } = await supabase
         .from('mining_stats')
         .select('*')
@@ -272,6 +274,14 @@ const Dashboard = () => {
           .single();
         if (newStats) setMiningStats(newStats);
       }
+
+      // Fetch referral_balance from profile (so Referral Bonus card shows latest after admin updates)
+      const { data: profileRow } = await supabase
+        .from('profiles')
+        .select('referral_balance')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+      setReferralBalance(profileRow?.referral_balance != null ? Number(profileRow.referral_balance) : 0);
 
       // Fetch support tickets
       const { data: userTickets, error: ticketsError } = await supabase
@@ -1990,12 +2000,12 @@ const Dashboard = () => {
                     <div className="flex items-center gap-3">
                       <WhatsAppIcon className="h-5 w-5 text-yellow-400" />
                       <a 
-                        href="https://wa.me/447782206891" 
+                        href={WHATSAPP_LINK} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-white/70 hover:text-yellow-400 transition-colors"
                       >
-                        +44 7782 206891
+                        {WHATSAPP_DISPLAY}
                       </a>
                     </div>
                     <div className="flex items-center gap-3">
@@ -2047,7 +2057,7 @@ const Dashboard = () => {
                 <CardDescription className="text-yellow-400">My Referrals</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">0 USD</p>
+                <p className="text-3xl font-bold">{formatCurrency(referralBalance ?? profile?.referral_balance ?? 0)}</p>
               </CardContent>
             </Card>
             <Card className="bg-gradient-to-br from-[#1B2436] to-[#131B2B] border-white/5">

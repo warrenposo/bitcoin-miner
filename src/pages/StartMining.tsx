@@ -59,12 +59,12 @@ interface PurchasedPlan {
 }
 
 type PurchaseStage = 'form' | 'preview' | 'payment';
-type GatewayValue = 'btc' | 'usdt-trc20' | 'usdt-erc20' | 'usdc' | 'eth';
+type GatewayValue = 'btc' | 'usdt-trc20' | 'usdt-erc20' | 'usdc' | 'eth' | 'solana';
 
 interface GatewayOption {
   value: GatewayValue;
   label: string;
-  currency: 'BTC' | 'USDT' | 'USDC' | 'ETH';
+  currency: 'BTC' | 'USDT' | 'USDC' | 'ETH' | 'SOL';
   network: string;
   min: number;
   max: number;
@@ -78,7 +78,7 @@ interface PreviewData {
   amount: number;
   charge: number;
   payable: number;
-  currency: 'BTC' | 'USDT' | 'USDC' | 'ETH';
+  currency: 'BTC' | 'USDT' | 'USDC' | 'ETH' | 'SOL';
   network: string;
   conversionRate: number;
   cryptoAmount: number;
@@ -420,6 +420,16 @@ const StartMining = () => {
       coingeckoId: 'ethereum',
       description: 'Native Ethereum deposits',
     },
+    {
+      value: 'solana',
+      label: 'Solana (SOL)',
+      currency: 'SOL',
+      network: 'Solana',
+      min: 70,
+      max: 500000,
+      coingeckoId: 'solana',
+      description: 'Fast & low-fee payments on Solana network',
+    },
   ];
 
   const fallbackAddresses: Record<GatewayValue, string> = {
@@ -428,6 +438,7 @@ const StartMining = () => {
     'usdt-erc20': '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05',
     usdc: '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05',
     eth: '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05',
+    solana: 'D26bc2Rh5Ebz5vMxb8dkHKMLJB6YRy4GGapKJWiiqgwc',
   };
 
   const selectedGatewayOption = useMemo(
@@ -457,6 +468,8 @@ const StartMining = () => {
       case 'usdt-erc20':
       case 'usdc':
         return `ethereum:${address}?value=${formattedAmount}`;
+      case 'solana':
+        return address;
       default:
         return address;
     }

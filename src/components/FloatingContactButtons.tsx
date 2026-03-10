@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { WHATSAPP_LINK } from "@/constants/contact";
 
 // Lightweight WhatsApp icon
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -27,7 +28,7 @@ const TelegramIcon = ({ className }: { className?: string }) => (
 const LINKS = [
   {
     label: "Chat on WhatsApp",
-    href: "https://wa.me/447782206891",
+    href: WHATSAPP_LINK,
     icon: WhatsAppIcon,
     glow: "from-green-400/60 to-emerald-500/40",
   },

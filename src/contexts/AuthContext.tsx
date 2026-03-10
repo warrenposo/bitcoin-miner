@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Optimize query - only select needed fields
       const fetchPromise = supabase
         .from('profiles')
-        .select('id, user_id, email, full_name, role, referral_code, username, mobile, country, address, state, zip_code, city, usdt_wallet_address, two_fa_enabled, created_at, updated_at')
+        .select('id, user_id, email, full_name, role, referral_code, referral_balance, username, mobile, country, address, state, zip_code, city, usdt_wallet_address, two_fa_enabled, created_at, updated_at')
         .eq('user_id', userId)
         .single();
 

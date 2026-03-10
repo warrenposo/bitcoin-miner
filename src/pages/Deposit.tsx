@@ -32,15 +32,16 @@ import btcQR from '@/assets/btc33.jpeg';
 import erc20QR from '@/assets/eth11.jpeg';
 import ethQR from '@/assets/eth11.jpeg';
 import trc20QR from '@/assets/trc22.jfif';
+import solanaQR from '@/assets/solana.jpeg';
 
 type DepositView = 'deposit' | 'log';
 type DepositStage = 'form' | 'preview' | 'payment';
-type GatewayValue = 'btc' | 'usdt-trc20' | 'usdt-erc20' | 'usdc' | 'eth';
+type GatewayValue = 'btc' | 'usdt-trc20' | 'usdt-erc20' | 'usdc' | 'eth' | 'solana';
 
 interface GatewayOption {
   value: GatewayValue;
   label: string;
-  currency: 'BTC' | 'USDT' | 'USDC' | 'ETH';
+  currency: 'BTC' | 'USDT' | 'USDC' | 'ETH' | 'SOL';
   network: string;
   min: number;
   max: number;
@@ -54,7 +55,7 @@ interface PreviewData {
   amount: number;
   charge: number;
   payable: number;
-  currency: 'BTC' | 'USDT' | 'USDC' | 'ETH';
+  currency: 'BTC' | 'USDT' | 'USDC' | 'ETH' | 'SOL';
   network: string;
   conversionRate: number;
   cryptoAmount: number;
@@ -108,6 +109,16 @@ const gatewayOptions: GatewayOption[] = [
     coingeckoId: 'ethereum',
     description: 'Native Ethereum deposits',
   },
+  {
+    value: 'solana',
+    label: 'Solana (SOL)',
+    currency: 'SOL',
+    network: 'Solana',
+    min: 70,
+    max: 500000,
+    coingeckoId: 'solana',
+    description: 'Fast & low-fee payments on Solana network',
+  },
 ];
 
 const fallbackAddresses: Record<GatewayValue, string> = {
@@ -116,6 +127,7 @@ const fallbackAddresses: Record<GatewayValue, string> = {
   'usdt-erc20': '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05',
   usdc: '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05',
   eth: '0x2b5E6d86F7C9b8e64cD753e55a18749f4F268F05',
+  solana: 'D26bc2Rh5Ebz5vMxb8dkHKMLJB6YRy4GGapKJWiiqgwc',
 };
 
 const formatUSD = (value: number) =>
@@ -140,6 +152,8 @@ const getPaymentURI = (gateway: GatewayValue, address: string, amount: number) =
     case 'usdt-erc20':
     case 'usdc':
       return `ethereum:${address}?value=${formattedAmount}`;
+    case 'solana':
+      return address; // Solana: QR can show address for copy/scan
     default:
       return address;
   }
@@ -743,6 +757,7 @@ const Deposit = () => {
                                 'usdt-erc20': erc20QR,
                                 'usdc': erc20QR, // USDC uses ERC20 network
                                 'eth': ethQR,
+                                'solana': solanaQR,
                               };
 
                               return qrCodeMap[gateway] || btcQR;

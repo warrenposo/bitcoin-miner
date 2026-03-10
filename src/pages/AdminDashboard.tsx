@@ -22,6 +22,8 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  Pencil,
+  Search,
   Shield,
   Users,
   X,
@@ -29,13 +31,24 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface User {
   id: string;
+  user_id: string;
   email: string;
   full_name: string | null;
   role: string;
   created_at: string;
+  referral_balance?: number;
 }
 
 interface SupportTicket {
@@ -55,6 +68,7 @@ interface MiningStats {
   hash_rate: number;
   total_mined: number;
   daily_earnings: number;
+  available_balance?: number;
   user_email?: string;
 }
 
@@ -70,6 +84,13 @@ const AdminDashboard = () => {
   const [ticketStatus, setTicketStatus] = useState('');
   const [activeView, setActiveView] = useState<'overview' | 'users' | 'tickets' | 'analytics'>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [balanceEditUser, setBalanceEditUser] = useState<User | null>(null);
+  const [balanceEditValue, setBalanceEditValue] = useState('');
+  const [balanceEditSaving, setBalanceEditSaving] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [referralEditUser, setReferralEditUser] = useState<User | null>(null);
+  const [referralEditValue, setReferralEditValue] = useState('');
+  const [referralEditSaving, setReferralEditSaving] = useState(false);
 
   useEffect(() => {
     if (profile?.role !== 'admin') {
@@ -177,6 +198,147 @@ const AdminDashboard = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const filteredUsers = useMemo(() => {
+    const q = userSearchQuery.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(
+      (u) =>
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.full_name || '').toLowerCase().includes(q)
+    );
+  }, [users, userSearchQuery]);
+
+  const getBalanceForUser = (userId: string) => {
+    const stat = allStats.find((s) => s.user_id === userId);
+    return stat ? Number(stat.total_mined ?? 0) : 0;
+  };
+
+  const getReferralBalanceForUser = (u: User) => Number(u.referral_balance ?? 0);
+
+  const handleOpenBalanceEdit = (u: User) => {
+    setBalanceEditUser(u);
+    setBalanceEditValue(String(getBalanceForUser(u.user_id)));
+  };
+
+  const handleSaveBalance = async () => {
+    if (!balanceEditUser) return;
+    const newBalance = parseFloat(balanceEditValue);
+    if (Number.isNaN(newBalance) || newBalance < 0) {
+      toast({ title: 'Invalid amount', description: 'Enter a valid balance (number ≥ 0).', variant: 'destructive' });
+      return;
+    }
+    setBalanceEditSaving(true);
+    try {
+      const userId = balanceEditUser.user_id;
+      const oldBalance = getBalanceForUser(userId);
+      const creditAmount = newBalance - oldBalance;
+
+      const { data: existingStat } = await supabase
+        .from('mining_stats')
+        .select('id, hash_rate, daily_earnings')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (existingStat) {
+        const { error: updateError } = await supabase
+          .from('mining_stats')
+          .update({
+            total_mined: newBalance,
+            available_balance: newBalance,
+            last_updated: new Date().toISOString(),
+          })
+          .eq('user_id', userId);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('mining_stats')
+          .insert({
+            user_id: userId,
+            hash_rate: 0,
+            total_mined: newBalance,
+            daily_earnings: 0,
+            available_balance: newBalance,
+            last_updated: new Date().toISOString(),
+          });
+        if (insertError) throw insertError;
+      }
+
+      if (creditAmount > 0) {
+        const txId = `ADMIN-ADJ-${Date.now()}-${Math.random().toString(36).slice(2, 9).toUpperCase()}`;
+        const { error: depositError } = await supabase.from('deposits').insert({
+          user_id: userId,
+          transaction_id: txId,
+          gateway: 'btc',
+          amount: creditAmount,
+          charge: 0,
+          payable: creditAmount,
+          status: 'completed',
+          currency: 'USD',
+          completed_at: new Date().toISOString(),
+        });
+        if (depositError) throw depositError;
+
+        const { data: referralRow } = await supabase
+          .from('referrals')
+          .select('referrer_id')
+          .eq('referred_id', userId)
+          .maybeSingle();
+        if (referralRow?.referrer_id) {
+          const refBonus = Math.round(creditAmount * 0.05 * 100) / 100;
+          if (refBonus > 0) {
+            await supabase.from('referral_commissions').insert({
+              referrer_id: referralRow.referrer_id,
+              referred_id: userId,
+              commission_type: 'deposit',
+              amount: refBonus,
+              percentage: 5,
+              status: 'pending',
+            });
+          }
+        }
+      }
+
+      toast({ title: 'Balance updated', description: creditAmount > 0 ? 'Deposit log entry created for the user.' : 'User balance updated.' });
+      setBalanceEditUser(null);
+      setBalanceEditValue('');
+      fetchData();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err?.message || 'Failed to update balance', variant: 'destructive' });
+    } finally {
+      setBalanceEditSaving(false);
+    }
+  };
+
+  const handleOpenReferralEdit = (u: User) => {
+    setReferralEditUser(u);
+    setReferralEditValue(String(getReferralBalanceForUser(u)));
+  };
+
+  const handleSaveReferralBalance = async () => {
+    if (!referralEditUser) return;
+    const value = parseFloat(referralEditValue);
+    if (Number.isNaN(value) || value < 0) {
+      toast({ title: 'Invalid amount', description: 'Enter a valid referral balance (number ≥ 0).', variant: 'destructive' });
+      return;
+    }
+    setReferralEditSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ referral_balance: value, updated_at: new Date().toISOString() })
+        .eq('user_id', referralEditUser.user_id);
+      if (error) throw error;
+      toast({ title: 'Referral balance updated', description: `Set to ${value.toFixed(2)} USD for ${referralEditUser.email}.` });
+      setReferralEditUser(null);
+      setReferralEditValue('');
+      fetchData();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err?.message || 'Failed to update referral balance', variant: 'destructive' });
+    } finally {
+      setReferralEditSaving(false);
     }
   };
 
@@ -449,9 +611,20 @@ const AdminDashboard = () => {
                   <CardTitle className="text-white">User Directory</CardTitle>
                   <CardDescription className="text-white/50">Full list of all registered users and roles</CardDescription>
                 </div>
-                <Button variant="outline" className="border-white/10 text-white hover:bg-white/10">
-                  Export CSV
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                    <Input
+                      placeholder="Search by email or name..."
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                      className="pl-9 w-full sm:w-56 bg-[#0F1F3F] border-white/10 text-white placeholder:text-white/40"
+                    />
+                  </div>
+                  <Button variant="outline" className="border-white/10 text-white hover:bg-white/10">
+                    Export CSV
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -460,11 +633,14 @@ const AdminDashboard = () => {
                       <th className="pb-3">Email</th>
                       <th>Name</th>
                       <th>Role</th>
+                      <th>Balance (USD)</th>
+                      <th>Referral (USD)</th>
                       <th>Joined</th>
+                      <th className="text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {users.map((user) => (
+                    {filteredUsers.map((user) => (
                       <tr key={user.id} className="text-white/70">
                         <td className="py-3">{user.email}</td>
                         <td>{user.full_name || 'N/A'}</td>
@@ -477,14 +653,109 @@ const AdminDashboard = () => {
                             {user.role}
                           </span>
                         </td>
+                        <td>{getBalanceForUser(user.user_id).toFixed(2)}</td>
+                        <td>{getReferralBalanceForUser(user).toFixed(2)}</td>
                         <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                        <td className="text-right whitespace-nowrap">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 mr-1"
+                            onClick={() => handleOpenBalanceEdit(user)}
+                          >
+                            <Pencil className="h-4 w-4 mr-1 inline" />
+                            Balance
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-green-400 hover:text-green-300 hover:bg-green-500/10"
+                            onClick={() => handleOpenReferralEdit(user)}
+                          >
+                            <Pencil className="h-4 w-4 mr-1 inline" />
+                            Referral
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                {filteredUsers.length === 0 && (
+                  <p className="text-center text-white/50 py-6">
+                    {userSearchQuery.trim() ? 'No users match your search.' : 'No users yet.'}
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}
+
+          {/* Edit Balance Dialog */}
+          <Dialog open={!!balanceEditUser} onOpenChange={(open) => !open && setBalanceEditUser(null)}>
+            <DialogContent className="border-white/10 bg-[#0B152F] text-white">
+              <DialogHeader>
+                <DialogTitle>Edit user balance</DialogTitle>
+                <DialogDescription className="text-white/60">
+                  {balanceEditUser?.email}. Changes apply to mining balance. A credit will appear in the user&apos;s Deposit Log and may create referral bonus for their referrer.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="balance-edit" className="text-white/80">New balance (USD)</Label>
+                  <Input
+                    id="balance-edit"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={balanceEditValue}
+                    onChange={(e) => setBalanceEditValue(e.target.value)}
+                    className="bg-[#0F1F3F] border-white/10 text-white"
+                  />
+                </div>
+              </div>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="outline" className="border-white/10 text-white" onClick={() => setBalanceEditUser(null)} disabled={balanceEditSaving}>
+                  Cancel
+                </Button>
+                <Button className="bg-yellow-500 text-black hover:bg-yellow-400" onClick={handleSaveBalance} disabled={balanceEditSaving}>
+                  {balanceEditSaving ? 'Saving...' : 'Save'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Referral Balance Dialog */}
+          <Dialog open={!!referralEditUser} onOpenChange={(open) => !open && setReferralEditUser(null)}>
+            <DialogContent className="border-white/10 bg-[#0B152F] text-white">
+              <DialogHeader>
+                <DialogTitle>Edit referral balance</DialogTitle>
+                <DialogDescription className="text-white/60">
+                  {referralEditUser?.email}. Set the referral earnings balance for this user (as referrer). This is separate from mining balance.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="referral-edit" className="text-white/80">Referral balance (USD)</Label>
+                  <Input
+                    id="referral-edit"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={referralEditValue}
+                    onChange={(e) => setReferralEditValue(e.target.value)}
+                    className="bg-[#0F1F3F] border-white/10 text-white"
+                  />
+                </div>
+              </div>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="outline" className="border-white/10 text-white" onClick={() => setReferralEditUser(null)} disabled={referralEditSaving}>
+                  Cancel
+                </Button>
+                <Button className="bg-green-600 text-white hover:bg-green-500" onClick={handleSaveReferralBalance} disabled={referralEditSaving}>
+                  {referralEditSaving ? 'Saving...' : 'Save'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Tickets View */}
           {activeView === 'tickets' && (

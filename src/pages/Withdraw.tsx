@@ -301,6 +301,9 @@ const Withdraw = () => {
                       <SelectItem value="eth" className="text-white hover:bg-white/10 focus:bg-yellow-500/20">
                         ETH
                       </SelectItem>
+                      <SelectItem value="solana" className="text-white hover:bg-white/10 focus:bg-yellow-500/20">
+                        Solana (SOL)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

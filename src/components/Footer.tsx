@@ -1,5 +1,6 @@
 import { Phone, Mail, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from "@/constants/contact";
 
 // WhatsApp Icon Component
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -108,12 +109,12 @@ export const Footer = () => {
               <li className="flex items-center gap-3">
                 <WhatsAppIcon className="h-5 w-5 text-yellow-400" />
                 <a 
-                  href="https://wa.me/447782206891" 
+                  href={WHATSAPP_LINK} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-white/70 hover:text-yellow-400 transition-colors"
                 >
-                  +44 7782 206891
+                  {WHATSAPP_DISPLAY}
                 </a>
               </li>
               <li className="flex items-center gap-3">
@@ -145,7 +146,7 @@ export const Footer = () => {
               <div className="text-yellow-400 text-2xl">⚜</div>
             </div>
             <p className="text-white/70 text-sm text-center">
-              Copyright © 2020-2025 Btc Mining All Right Reserved
+              Copyright © 2020–2025 BTC Mining All Rights Reserved
             </p>
           </div>
         </div>
