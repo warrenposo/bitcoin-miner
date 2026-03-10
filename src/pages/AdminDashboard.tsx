@@ -24,11 +24,13 @@ import {
   MessageSquare,
   Pencil,
   Search,
+  Settings,
   Shield,
   Users,
   X,
   Zap,
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useMemo } from 'react';
@@ -49,6 +51,7 @@ interface User {
   role: string;
   created_at: string;
   referral_balance?: number;
+  mining_enabled?: boolean;
 }
 
 interface SupportTicket {
@@ -82,8 +85,9 @@ const AdminDashboard = () => {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [ticketResponse, setTicketResponse] = useState('');
   const [ticketStatus, setTicketStatus] = useState('');
-  const [activeView, setActiveView] = useState<'overview' | 'users' | 'tickets' | 'analytics'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'users' | 'tickets' | 'analytics' | 'settings'>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [savingMiningUserId, setSavingMiningUserId] = useState<string | null>(null);
   const [balanceEditUser, setBalanceEditUser] = useState<User | null>(null);
   const [balanceEditValue, setBalanceEditValue] = useState('');
   const [balanceEditSaving, setBalanceEditSaving] = useState(false);
@@ -458,6 +462,17 @@ const AdminDashboard = () => {
             >
               <BarChart3 className="h-4 w-4" /> Analytics
             </button>
+            <button 
+              onClick={() => {
+                setActiveView('settings');
+                setMobileMenuOpen(false);
+              }}
+              className={`flex items-center gap-2 transition-colors py-2 lg:py-0 ${
+                activeView === 'settings' ? 'text-yellow-400' : 'text-white/70 hover:text-white'
+              }`}
+            >
+              <Settings className="h-4 w-4" /> Settings
+            </button>
           </nav>
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="hidden text-right text-xs text-white/60 sm:block">
@@ -603,6 +618,16 @@ const AdminDashboard = () => {
             </>
           )}
 
+          {/* Settings View */}
+          {activeView === 'settings' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-semibold text-white">Settings</h1>
+                <p className="mt-1 text-white/60">Mining is controlled per user in the User Directory. Use the Mining column to enable or disable mining for each user.</p>
+              </div>
+            </div>
+          )}
+
           {/* Users View */}
           {activeView === 'users' && (
             <Card className="border-white/5 bg-[#0B152F]">
@@ -633,6 +658,7 @@ const AdminDashboard = () => {
                       <th className="pb-3">Email</th>
                       <th>Name</th>
                       <th>Role</th>
+                      <th>Mining</th>
                       <th>Balance (USD)</th>
                       <th>Referral (USD)</th>
                       <th>Joined</th>
@@ -652,6 +678,26 @@ const AdminDashboard = () => {
                           >
                             {user.role}
                           </span>
+                        </td>
+                        <td>
+                          <Switch
+                            checked={user.mining_enabled !== false}
+                            disabled={savingMiningUserId === user.user_id}
+                            onCheckedChange={async (checked) => {
+                              setSavingMiningUserId(user.user_id);
+                              const { error } = await supabase
+                                .from('profiles')
+                                .update({ mining_enabled: checked })
+                                .eq('user_id', user.user_id);
+                              setSavingMiningUserId(null);
+                              if (error) {
+                                toast({ title: 'Error', description: error.message, variant: 'destructive' });
+                              } else {
+                                setUsers((prev) => prev.map((u) => (u.user_id === user.user_id ? { ...u, mining_enabled: checked } : u)));
+                                toast({ title: 'Saved', description: checked ? 'Mining enabled for this user.' : 'Mining disabled for this user.' });
+                              }
+                            }}
+                          />
                         </td>
                         <td>{getBalanceForUser(user.user_id).toFixed(2)}</td>
                         <td>{getReferralBalanceForUser(user).toFixed(2)}</td>

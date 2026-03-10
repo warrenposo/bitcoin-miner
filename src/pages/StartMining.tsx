@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { UserSidebar } from '@/components/UserSidebar';
+import { WHATSAPP_LINK } from '@/constants/contact';
 
 interface MiningPlan {
   id: string;
@@ -773,6 +774,9 @@ const StartMining = () => {
   const [miningStopBalanceInput, setMiningStopBalanceInput] = useState('');
   const [savingStopBalance, setSavingStopBalance] = useState(false);
 
+  // Per-user mining: from profile (admin enables/disables per user)
+  const miningEnabled = profile?.mining_enabled ?? true;
+
   // Fetch user balance
   const fetchUserBalance = async () => {
     if (!user) return;
@@ -973,6 +977,14 @@ const StartMining = () => {
   }, [activeView, isSessionActive, getCurrentMined]);
 
   const handleStartMiningSession = async () => {
+    if (!miningEnabled) {
+      toast({
+        title: 'Mining not activated',
+        description: 'Mining sessions are currently disabled. Please contact support to activate your mining session.',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (userBalance <= 0) {
       setShowStartSessionModal(true);
       return;
@@ -1449,7 +1461,7 @@ const StartMining = () => {
                   <div className="text-3xl font-bold text-yellow-400 mb-2">
                     {sessionTarget.toFixed(2)}
                   </div>
-                  <div className="text-white/60 text-sm">TARGET (20% / day)</div>
+                  <div className="text-white/60 text-sm">TARGET</div>
                 </div>
                 <div className="bg-[#111B2D] border border-white/10 rounded-lg p-6 text-center">
                   <div className="text-3xl font-bold text-yellow-400 mb-2">{currentHashRate.toFixed(1)} TH/s</div>
@@ -1485,17 +1497,33 @@ const StartMining = () => {
                 </div>
               </div>
 
+              {!miningEnabled && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-200">
+                  <p className="font-semibold">Mining session is not activated</p>
+                  <p className="mt-1 text-sm text-white/80">
+                    Mining is currently disabled. Please contact support to activate your mining session.
+                  </p>
+                  <a
+                    href={WHATSAPP_LINK}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500"
+                  >
+                    Contact support
+                  </a>
+                </div>
+              )}
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 flex flex-col gap-1">
                   <Button
                     onClick={() => (userBalance > 0 ? handleStartMiningSession() : setShowStartSessionModal(true))}
-                    disabled={isSessionActive || userBalance <= 0}
+                    disabled={isSessionActive || userBalance <= 0 || !miningEnabled}
                     className="w-full bg-yellow-500 text-black hover:bg-yellow-400 font-semibold text-lg py-6 disabled:opacity-60 disabled:pointer-events-none"
                   >
                     {isSessionActive ? 'Mining...' : 'Start New Session'}
                   </Button>
-                  {userBalance <= 0 && !isSessionActive && (
+                  {userBalance <= 0 && !isSessionActive && miningEnabled && (
                     <p className="text-white/50 text-xs">Balance must be greater than zero to mine. Deposit first.</p>
                   )}
                 </div>

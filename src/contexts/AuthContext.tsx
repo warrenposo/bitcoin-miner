@@ -8,6 +8,7 @@ interface Profile {
   email: string;
   full_name: string | null;
   role: 'admin' | 'user';
+  mining_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -70,14 +71,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
       );
 
-      // Optimize query - only select needed fields
-      const fetchPromise = supabase
+      // Optimize query - only select needed fields. Include mining_enabled if column exists.
+      const selectWithMining = 'id, user_id, email, full_name, role, referral_code, referral_balance, mining_stop_balance, mining_enabled, username, mobile, country, address, state, zip_code, city, usdt_wallet_address, two_fa_enabled, created_at, updated_at';
+      const selectWithoutMining = 'id, user_id, email, full_name, role, referral_code, referral_balance, mining_stop_balance, username, mobile, country, address, state, zip_code, city, usdt_wallet_address, two_fa_enabled, created_at, updated_at';
+
+      let fetchPromise = supabase
         .from('profiles')
-        .select('id, user_id, email, full_name, role, referral_code, referral_balance, mining_stop_balance, username, mobile, country, address, state, zip_code, city, usdt_wallet_address, two_fa_enabled, created_at, updated_at')
+        .select(selectWithMining)
         .eq('user_id', userId)
         .single();
 
-      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      let { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
+      // If fetch failed due to missing column (e.g. mining_enabled not migrated yet), retry without it
+      if (error && (error.code === '42703' || error.message?.includes('mining_enabled'))) {
+        console.log('[AuthContext] Retrying profile fetch without mining_enabled (column may not exist yet)');
+        const fallback = await supabase
+          .from('profiles')
+          .select(selectWithoutMining)
+          .eq('user_id', userId)
+          .single();
+        if (!fallback.error) {
+          data = { ...fallback.data, mining_enabled: true };
+          error = null;
+        }
+      }
 
       if (error) {
         console.error('[AuthContext] Error fetching profile:', error);

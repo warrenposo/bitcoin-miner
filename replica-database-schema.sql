@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   referral_code TEXT UNIQUE,
   referral_balance DECIMAL(18, 8) DEFAULT 0,
   mining_stop_balance DECIMAL(18, 8) DEFAULT NULL,
+  mining_enabled BOOLEAN NOT NULL DEFAULT true,
   usdt_wallet_address TEXT,
   two_fa_enabled BOOLEAN DEFAULT FALSE,
   two_fa_secret TEXT,
@@ -233,6 +234,19 @@ CREATE TABLE IF NOT EXISTS deposit_addresses (
 );
 
 -- ============================================
+-- SITE SETTINGS (single row: mining on/off)
+-- ============================================
+CREATE TABLE IF NOT EXISTS site_settings (
+  id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  mining_enabled BOOLEAN NOT NULL DEFAULT true,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+INSERT INTO site_settings (id, mining_enabled)
+VALUES (1, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
 -- ROW LEVEL SECURITY
 -- ============================================
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -247,6 +261,7 @@ ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE referral_commissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_wallets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE deposit_addresses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 
 -- Admin check function (avoids RLS recursion)
 CREATE OR REPLACE FUNCTION public.is_admin(user_uuid UUID)
@@ -333,6 +348,10 @@ CREATE POLICY "Admins can view all wallets" ON user_wallets FOR SELECT USING (pu
 -- Deposit addresses policies
 CREATE POLICY "Anyone can view active deposit addresses" ON deposit_addresses FOR SELECT USING (is_active = TRUE);
 CREATE POLICY "Admins can manage deposit addresses" ON deposit_addresses FOR ALL USING (public.is_admin(auth.uid()));
+
+-- Site settings policies
+CREATE POLICY "Anyone can read site_settings" ON site_settings FOR SELECT USING (true);
+CREATE POLICY "Admins can update site_settings" ON site_settings FOR UPDATE USING (public.is_admin(auth.uid()));
 
 -- ============================================
 -- FUNCTIONS & TRIGGERS
