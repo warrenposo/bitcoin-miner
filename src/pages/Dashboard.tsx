@@ -2224,7 +2224,7 @@ const Dashboard = () => {
                 </ul>
               </div>
             </div>
-            <p className="mt-6 text-center text-xs text-white/40">Copyright © 2020–2025 BTC Mining All Rights Reserved</p>
+            <p className="mt-6 text-center text-xs text-white/40">Copyright © 2020–2026 BTC Mining All Rights Reserved</p>
           </footer>
             </>
           )}

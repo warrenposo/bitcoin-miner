@@ -1500,17 +1500,6 @@ const StartMining = () => {
               {!miningEnabled && (
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-200">
                   <p className="font-semibold">Mining session is not activated</p>
-                  <p className="mt-1 text-sm text-white/80">
-                    Mining is currently disabled. Please contact support to activate your mining session.
-                  </p>
-                  <a
-                    href={WHATSAPP_LINK}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500"
-                  >
-                    Contact support
-                  </a>
                 </div>
               )}
               {/* Action Buttons */}

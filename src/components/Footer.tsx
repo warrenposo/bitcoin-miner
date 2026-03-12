@@ -146,7 +146,7 @@ export const Footer = () => {
               <div className="text-yellow-400 text-2xl">⚜</div>
             </div>
             <p className="text-white/70 text-sm text-center">
-              Copyright © 2020–2025 BTC Mining All Rights Reserved
+              Copyright © 2020–2026 BTC Mining All Rights Reserved
             </p>
           </div>
         </div>
