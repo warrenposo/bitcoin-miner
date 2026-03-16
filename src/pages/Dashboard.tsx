@@ -8,20 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowRight,
-  Send,
   Zap,
   Users,
-  List,
   Copy,
-  CirclePlus,
   Plus,
-  Paperclip,
   Info,
   MapPin,
   Mail,
   LogOut,
-  MessageSquare,
-  Headphones,
   Lock,
   CircleDollarSign,
 } from 'lucide-react';
@@ -50,20 +44,6 @@ interface MiningStats {
   daily_earnings: number;
 }
 
-interface SupportTicket {
-  id: string;
-  subject: string;
-  message: string;
-  status: string;
-  priority: string;
-  created_at: string;
-  updated_at?: string;
-  admin_response: string | null;
-  name?: string;
-  email?: string;
-  file_name?: string;
-  file_url?: string;
-}
 
 const translations = {
   en: {
@@ -118,11 +98,7 @@ const Dashboard = () => {
   const { user, profile, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [miningStats, setMiningStats] = useState<MiningStats | null>(null);
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showTicketForm, setShowTicketForm] = useState(false);
-  const [ticketSubject, setTicketSubject] = useState('');
-  const [ticketMessage, setTicketMessage] = useState('');
   // Initialize language from localStorage if available, otherwise default to 'en'
   const [language, setLanguage] = useState<LanguageKey>(() => {
     const storedLang = localStorage.getItem('selectedLanguage') as LanguageKey;
@@ -130,7 +106,7 @@ const Dashboard = () => {
   });
   // Check for view from sessionStorage (set by navigation)
   const initialView = (sessionStorage.getItem('dashboard_view') as any) || 'dashboard';
-  const [activeView, setActiveView] = useState<'dashboard' | 'my-referrals' | 'referral-bonus-logs' | 'withdraw-logs' | 'create-tickets' | 'all-tickets' | 'profile' | 'wallets' | '2fa-security' | 'change-password' | 'team' | 'about-us'>(initialView);
+  const [activeView, setActiveView] = useState<'dashboard' | 'my-referrals' | 'referral-bonus-logs' | 'withdraw-logs' | 'profile' | 'wallets' | '2fa-security' | 'change-password' | 'team' | 'about-us'>(initialView);
 
   // Clear sessionStorage view after using it
   useEffect(() => {
@@ -147,10 +123,9 @@ const Dashboard = () => {
     }
   }, [activeView]);
 
-  // Set email from profile when component loads
+  // Set profile data when component loads
   useEffect(() => {
     if (profile?.email) {
-      setTicketEmail(profile.email);
       setProfileData(prev => ({
         ...prev,
         email: profile.email,
@@ -168,10 +143,6 @@ const Dashboard = () => {
   const [referralBonusLogs, setReferralBonusLogs] = useState<any[]>([]);
   const [withdrawLogs, setWithdrawLogs] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [ticketName, setTicketName] = useState('');
-  const [ticketEmail, setTicketEmail] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileName, setFileName] = useState('No file chosen');
   const [accountExpanded, setAccountExpanded] = useState(false);
   const [profileData, setProfileData] = useState({
     firstName: '',
@@ -193,10 +164,6 @@ const Dashboard = () => {
     newPassword: '',
     confirmPassword: '',
   });
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-  const [showTicketDetail, setShowTicketDetail] = useState(false);
-  const [ticketReply, setTicketReply] = useState('');
-  const [isReplying, setIsReplying] = useState(false);
 
   const copy = translations[language];
 
@@ -282,21 +249,6 @@ const Dashboard = () => {
         .eq('user_id', user!.id)
         .maybeSingle();
       setReferralBalance(profileRow?.referral_balance != null ? Number(profileRow.referral_balance) : 0);
-
-      // Fetch support tickets
-      const { data: userTickets, error: ticketsError } = await supabase
-        .from('support_tickets')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false });
-
-      if (ticketsError) {
-        console.error('Error fetching tickets:', ticketsError);
-        // Don't show error toast, just log it
-        setTickets([]);
-      } else {
-        setTickets(userTickets || []);
-      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -309,79 +261,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleCreateTicket = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    if (!ticketName || !ticketEmail || !ticketSubject || !ticketMessage) {
-      toast({
-        title: 'Error',
-        description: 'Please fill in all required fields',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('support_tickets')
-        .insert({
-          user_id: user.id,
-          name: ticketName,
-          email: ticketEmail,
-          subject: ticketSubject,
-          message: ticketMessage,
-          status: 'open',
-          priority: 'medium',
-          file_name: selectedFile ? selectedFile.name : null,
-          // Note: file_url would need to be uploaded to Supabase Storage first
-          // For now, we'll leave it null
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: 'Support ticket created successfully',
-      });
-
-      setTicketName('');
-      setTicketSubject('');
-      setTicketMessage('');
-      setSelectedFile(null);
-      setFileName('No file chosen');
-      setShowTicketForm(false);
-      if (activeView === 'create-tickets') {
-        setActiveView('all-tickets');
-      }
-      fetchData();
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create ticket',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx'];
-      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-      
-      if (allowedExtensions.includes(fileExtension)) {
-        setSelectedFile(file);
-        setFileName(file.name);
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Invalid file type. Allowed: .jpg, .jpeg, .png, .pdf, .doc, .docx',
-          variant: 'destructive',
-        });
-      }
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -730,456 +609,6 @@ const Dashboard = () => {
           )}
 
 
-
-
-
-              <form onSubmit={handleCreateTicket} className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6 space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-white/70">
-                    Name <span className="text-yellow-400">*</span>
-                  </Label>
-                  <Input
-                    value={ticketName}
-                    onChange={(e) => setTicketName(e.target.value)}
-                    required
-                    className="bg-[#0B1421] text-white border-white/10"
-                    placeholder="Enter your name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-white/70">
-                    Email address <span className="text-yellow-400">*</span>
-                  </Label>
-                  <Input
-                    type="email"
-                    value={ticketEmail}
-                    onChange={(e) => setTicketEmail(e.target.value)}
-                    required
-                    className="bg-[#0B1421] text-white border-white/10"
-                    placeholder="Enter your email"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-white/70">Subject</Label>
-                  <Input
-                    value={ticketSubject}
-                    onChange={(e) => setTicketSubject(e.target.value)}
-                    className="bg-[#0B1421] text-white border-white/10"
-                    placeholder="Subject"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-white/70">Message</Label>
-                  <Textarea
-                    value={ticketMessage}
-                    onChange={(e) => setTicketMessage(e.target.value)}
-                    rows={6}
-                    className="bg-[#0B1421] text-white border-white/10"
-                    placeholder="Enter your message"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-white/70">Attach File</Label>
-                  <div className="flex items-center gap-2">
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        onChange={handleFileChange}
-                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-                        className="hidden"
-                        id="file-upload"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="border-white/20 text-white/80 hover:bg-white/10"
-                        onClick={() => document.getElementById('file-upload')?.click()}
-                      >
-                        Choose File
-                      </Button>
-                    </label>
-                    <span className="text-white/70">{fileName}</span>
-                    {selectedFile && (
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          setSelectedFile(null);
-                          setFileName('No file chosen');
-                        }}
-                        className="bg-yellow-500 text-black hover:bg-yellow-400 p-2 h-8 w-8"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-xs text-white/50">
-                    Allowed File Extensions: .jpg, .jpeg, .png, .pdf, .doc, .docx
-                  </p>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-yellow-500 text-black hover:bg-yellow-400"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit
-                </Button>
-              </form>
-            </div>
-          )}
-
-          {/* All Tickets Page */}
-          {activeView === 'all-tickets' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-white">Support Tickets</h2>
-                <Button
-                  onClick={() => setActiveView('create-tickets')}
-                  className="bg-yellow-500 text-black hover:bg-yellow-400"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Ticket
-                </Button>
-              </div>
-
-              <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-[#0B1421] text-white">
-                      <tr>
-                        <th className="py-3 px-4 text-left">Subject</th>
-                        <th className="py-3 px-4 text-center">Status</th>
-                        <th className="py-3 px-4 text-center">Last Reply</th>
-                        <th className="py-3 px-4 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-white/80">
-                      {tickets.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="py-8 text-center text-white/50">
-                            No tickets found
-                          </td>
-                        </tr>
-                      ) : (
-                        tickets.map((ticket) => (
-                          <tr key={ticket.id} className="border-t border-white/5">
-                            <td className="py-3 px-4">{ticket.subject}</td>
-                            <td className="py-3 px-4 text-center">
-                              <span className={`px-2 py-1 rounded text-xs ${
-                                ticket.status === 'resolved' ? 'bg-green-500/20 text-green-400' :
-                                ticket.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
-                                ticket.status === 'closed' ? 'bg-gray-500/20 text-gray-400' :
-                                'bg-yellow-500/20 text-yellow-400'
-                              }`}>
-                                {ticket.status}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              {ticket.updated_at ? new Date(ticket.updated_at).toLocaleDateString() : 'N/A'}
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <button 
-                                onClick={() => {
-                                  setSelectedTicket(ticket);
-                                  setShowTicketDetail(true);
-                                }}
-                                className="text-yellow-400 hover:text-yellow-300 cursor-pointer"
-                              >
-                                View
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Ticket Detail Modal */}
-          {showTicketDetail && selectedTicket && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-[#111B2D] rounded-lg border border-white/10 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="sticky top-0 bg-[#111B2D] border-b border-white/10 p-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold text-white">Ticket Details</h2>
-                  <button
-                    onClick={() => {
-                      setShowTicketDetail(false);
-                      setSelectedTicket(null);
-                    }}
-                    className="text-white/70 hover:text-white text-2xl"
-                  >
-                    ×
-                  </button>
-                </div>
-                
-                <div className="p-6 space-y-6">
-                  {/* Ticket Header Info */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-white/60 text-sm">Subject</Label>
-                      <p className="text-white font-semibold mt-1">{selectedTicket.subject}</p>
-                    </div>
-                    <div>
-                      <Label className="text-white/60 text-sm">Status</Label>
-                      <div className="mt-1">
-                        <span className={`px-3 py-1 rounded text-xs inline-block ${
-                          selectedTicket.status === 'resolved' ? 'bg-green-500/20 text-green-400' :
-                          selectedTicket.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
-                          selectedTicket.status === 'closed' ? 'bg-gray-500/20 text-gray-400' :
-                          'bg-yellow-500/20 text-yellow-400'
-                        }`}>
-                          {selectedTicket.status}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-white/60 text-sm">Priority</Label>
-                      <p className="text-white mt-1 capitalize">{selectedTicket.priority}</p>
-                    </div>
-                    <div>
-                      <Label className="text-white/60 text-sm">Created</Label>
-                      <p className="text-white mt-1">
-                        {selectedTicket.created_at ? new Date(selectedTicket.created_at).toLocaleString() : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Conversation History */}
-                  <div className="border-t border-white/10 pt-4 space-y-4">
-                    {(() => {
-                      // Parse message to extract original and replies
-                      const messageParts = selectedTicket.message.split('--- User Reply (');
-                      const initialMessage = messageParts[0].trim();
-                      const replies = messageParts.slice(1).map(part => {
-                        const [timestamp, ...replyParts] = part.split(') ---\n');
-                        return {
-                          timestamp: timestamp.trim(),
-                          message: replyParts.join(') ---\n').trim()
-                        };
-                      });
-
-                      return (
-                        <>
-                          {/* Original Message */}
-                          <div>
-                            <div className="flex items-center gap-2 mb-3">
-                              <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                                <User className="h-4 w-4 text-yellow-400" />
-                              </div>
-                              <div>
-                                <p className="text-white font-semibold">{(selectedTicket as any).name || 'You'}</p>
-                                <p className="text-white/60 text-xs">
-                                  {selectedTicket.created_at ? new Date(selectedTicket.created_at).toLocaleString() : ''}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="bg-[#0B1421] rounded-lg p-4 border border-white/5">
-                              <p className="text-white whitespace-pre-wrap">{initialMessage}</p>
-                            </div>
-                          </div>
-
-                          {/* User Replies */}
-                          {replies.map((reply, index) => (
-                            <div key={index}>
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                                  <User className="h-4 w-4 text-yellow-400" />
-                                </div>
-                                <div>
-                                  <p className="text-white font-semibold">You</p>
-                                  <p className="text-white/60 text-xs">{reply.timestamp}</p>
-                                </div>
-                              </div>
-                              <div className="bg-[#0B1421] rounded-lg p-4 border border-white/5">
-                                <p className="text-white whitespace-pre-wrap">{reply.message}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Admin Response */}
-                  {selectedTicket.admin_response && (
-                    <div className="border-t border-white/10 pt-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                          <Headphones className="h-4 w-4 text-blue-400" />
-                        </div>
-                        <div>
-                          <p className="text-white font-semibold">Support Team</p>
-                          <p className="text-white/60 text-xs">
-                            {selectedTicket.updated_at ? new Date(selectedTicket.updated_at).toLocaleString() : ''}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="bg-[#0B1421] rounded-lg p-4 border border-blue-500/20">
-                        <p className="text-white whitespace-pre-wrap">{selectedTicket.admin_response}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* No Response Message */}
-                  {!selectedTicket.admin_response && (
-                    <div className="border-t border-white/10 pt-4">
-                      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-center">
-                        <p className="text-yellow-400 text-sm">
-                          <Headphones className="h-4 w-4 inline mr-2" />
-                          Waiting for support team response...
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* File Attachment Info */}
-                  {(selectedTicket as any).file_name && (
-                    <div className="border-t border-white/10 pt-4">
-                      <Label className="text-white/60 text-sm">Attachment</Label>
-                      <div className="mt-2 flex items-center gap-2">
-                        <Paperclip className="h-4 w-4 text-white/60" />
-                        <p className="text-white">{(selectedTicket as any).file_name}</p>
-                        {(selectedTicket as any).file_url && (
-                          <a
-                            href={(selectedTicket as any).file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-yellow-400 hover:text-yellow-300 text-sm ml-auto"
-                          >
-                            Download
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Reply Section */}
-                  {selectedTicket.status !== 'closed' && (
-                    <div className="border-t border-white/10 pt-4">
-                      <Label className="text-white/70 mb-2 block">Reply to Support</Label>
-                      <form
-                        onSubmit={async (e) => {
-                          e.preventDefault();
-                          if (!ticketReply.trim() || !user || !selectedTicket) return;
-
-                          setIsReplying(true);
-                          try {
-                            // Append user reply to the message field with timestamp
-                            const timestamp = new Date().toLocaleString();
-                            const newReply = `\n\n--- User Reply (${timestamp}) ---\n${ticketReply}`;
-                            const updatedMessage = selectedTicket.message + newReply;
-
-                            const { error } = await supabase
-                              .from('support_tickets')
-                              .update({
-                                message: updatedMessage,
-                                updated_at: new Date().toISOString(),
-                              })
-                              .eq('id', selectedTicket.id);
-
-                            if (error) throw error;
-
-                            toast({
-                              title: 'Success',
-                              description: 'Your reply has been sent',
-                            });
-
-                            // Refresh ticket data
-                            const { data: updatedTicket } = await supabase
-                              .from('support_tickets')
-                              .select('*')
-                              .eq('id', selectedTicket.id)
-                              .single();
-
-                            if (updatedTicket) {
-                              setSelectedTicket(updatedTicket as SupportTicket);
-                            }
-
-                            // Refresh tickets list
-                            fetchData();
-
-                            setTicketReply('');
-                          } catch (error: any) {
-                            console.error('Error sending reply:', error);
-                            toast({
-                              title: 'Error',
-                              description: error.message || 'Failed to send reply',
-                              variant: 'destructive',
-                            });
-                          } finally {
-                            setIsReplying(false);
-                          }
-                        }}
-                        className="space-y-3"
-                      >
-                        <Textarea
-                          value={ticketReply}
-                          onChange={(e) => setTicketReply(e.target.value)}
-                          placeholder="Type your reply here..."
-                          className="bg-[#0B1421] text-white border-white/10 min-h-[100px]"
-                          required
-                        />
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setShowTicketDetail(false);
-                              setSelectedTicket(null);
-                              setTicketReply('');
-                            }}
-                            className="border-white/10 text-white hover:bg-white/10"
-                          >
-                            Close
-                          </Button>
-                          <Button
-                            type="submit"
-                            disabled={isReplying || !ticketReply.trim()}
-                            className="bg-yellow-500 text-black hover:bg-yellow-400 disabled:opacity-50"
-                          >
-                            {isReplying ? (
-                              <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2 inline-block"></div>
-                                Sending...
-                              </>
-                            ) : (
-                              <>
-                                <Send className="h-4 w-4 mr-2" />
-                                Send Reply
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </form>
-                    </div>
-                  )}
-
-                  {/* Close Button (only show if ticket is closed) */}
-                  {selectedTicket.status === 'closed' && (
-                    <div className="border-t border-white/10 pt-4 flex justify-end">
-                      <Button
-                        onClick={() => {
-                          setShowTicketDetail(false);
-                          setSelectedTicket(null);
-                          setTicketReply('');
-                        }}
-                        className="bg-yellow-500 text-black hover:bg-yellow-400"
-                      >
-                        Close
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Profile Setting Page */}
           {activeView === 'profile' && (
