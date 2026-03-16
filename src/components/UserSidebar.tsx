@@ -46,7 +46,7 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [referralExpanded, setReferralExpanded] = useState(false);
-  const [supportTicketExpanded, setSupportTicketExpanded] = useState(false);
+
   const [accountExpanded, setAccountExpanded] = useState(false);
   const [depositExpanded, setDepositExpanded] = useState(false);
   const [withdrawExpanded, setWithdrawExpanded] = useState(false);
@@ -57,9 +57,7 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
     if (activeView === 'my-referrals' || activeView === 'referral-bonus-logs' || activeView === 'withdraw-logs') {
       setReferralExpanded(true);
     }
-    if (activeView === 'create-tickets' || activeView === 'all-tickets') {
-      setSupportTicketExpanded(true);
-    }
+
     if (activeView === 'profile' || activeView === 'wallets' || activeView === 'change-password') {
       setAccountExpanded(true);
     }
@@ -110,14 +108,7 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
         { label: 'Withdraw Logs', view: 'withdraw-logs' },
       ],
     },
-    {
-      label: 'Support Ticket',
-      icon: MessageSquare,
-      subItems: [
-        { label: 'Create Tickets', view: 'create-tickets' },
-        { label: 'All Tickets', view: 'all-tickets' },
-      ],
-    },
+
     {
       label: 'My Account',
       icon: User,
@@ -133,7 +124,6 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
     if (item.subItems) {
       // Toggle the appropriate expanded state
       if (item.label === 'Referral') {
-        setSupportTicketExpanded(false);
         setAccountExpanded(false);
         setDepositExpanded(false);
         setWithdrawExpanded(false);
@@ -142,19 +132,8 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
         if (!referralExpanded && item.subItems.length > 0) {
           onViewChange?.(item.subItems[0].view || '');
         }
-      } else if (item.label === 'Support Ticket') {
-        setReferralExpanded(false);
-        setAccountExpanded(false);
-        setDepositExpanded(false);
-        setWithdrawExpanded(false);
-        setStartMiningExpanded(false);
-        setSupportTicketExpanded(!supportTicketExpanded);
-        if (!supportTicketExpanded && item.subItems.length > 0) {
-          onViewChange?.(item.subItems[0].view || '');
-        }
       } else if (item.label === 'My Account') {
         setReferralExpanded(false);
-        setSupportTicketExpanded(false);
         setDepositExpanded(false);
         setWithdrawExpanded(false);
         setStartMiningExpanded(false);
@@ -164,21 +143,18 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
         }
       } else if (item.label === 'Deposit') {
         setReferralExpanded(false);
-        setSupportTicketExpanded(false);
         setAccountExpanded(false);
         setWithdrawExpanded(false);
         setStartMiningExpanded(false);
         setDepositExpanded(!depositExpanded);
       } else if (item.label === 'Withdraw') {
         setReferralExpanded(false);
-        setSupportTicketExpanded(false);
         setAccountExpanded(false);
         setDepositExpanded(false);
         setStartMiningExpanded(false);
         setWithdrawExpanded(!withdrawExpanded);
       } else if (item.label === 'Start Mining') {
         setReferralExpanded(false);
-        setSupportTicketExpanded(false);
         setAccountExpanded(false);
         setDepositExpanded(false);
         setWithdrawExpanded(false);
@@ -229,8 +205,6 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
     switch (label) {
       case 'Referral':
         return referralExpanded;
-      case 'Support Ticket':
-        return supportTicketExpanded;
       case 'My Account':
         return accountExpanded;
       case 'Deposit':
@@ -323,8 +297,7 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
                             {subItem.view === 'my-referrals' && <Users className="h-4 w-4" />}
                             {subItem.view === 'referral-bonus-logs' && <List className="h-4 w-4" />}
                             {subItem.view === 'withdraw-logs' && <List className="h-4 w-4" />}
-                            {subItem.view === 'create-tickets' && <CirclePlus className="h-4 w-4" />}
-                            {subItem.view === 'all-tickets' && <List className="h-4 w-4" />}
+
                             {subItem.view === 'profile' && <User className="h-4 w-4" />}
                             {subItem.view === 'wallets' && <Wallet className="h-4 w-4" />}
                             {subItem.view === 'change-password' && <Key className="h-4 w-4" />}

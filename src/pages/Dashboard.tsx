@@ -729,19 +729,9 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Create Tickets Page */}
-          {activeView === 'create-tickets' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-white">Support Tickets</h2>
-                <Button
-                  onClick={() => setActiveView('all-tickets')}
-                  className="bg-yellow-500 text-black hover:bg-yellow-400"
-                >
-                  <List className="h-4 w-4 mr-2" />
-                  My Support Ticket
-                </Button>
-              </div>
+
+
+
 
               <form onSubmit={handleCreateTicket} className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6 space-y-4">
                 <div className="space-y-2">
