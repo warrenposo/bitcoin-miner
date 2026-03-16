@@ -1527,57 +1527,7 @@ const Dashboard = () => {
             </Card>
           </section>
 
-          <section className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-4 rounded-2xl border border-white/5 bg-[#0F1A2B]/70 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-white/60">Need help?</p>
-                  <h4 className="text-xl font-semibold text-white">Support Ticket</h4>
-                </div>
-                <Button 
-                  className="bg-yellow-500 text-black hover:bg-yellow-400" 
-                  onClick={() => {
-                    setActiveView('create-tickets');
-                    setSupportTicketExpanded(true);
-                  }}
-                >
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  New Ticket
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {tickets.length === 0 ? (
-                  <p className="text-center text-white/50">No support tickets yet</p>
-                ) : (
-                  <>
-                    {tickets.slice(0, 3).map((ticket) => (
-                      <div key={ticket.id} className="rounded-xl border border-white/5 bg-[#101B2C] p-4 text-sm">
-                        <div className="mb-2 flex items-center justify-between">
-                          <p className="font-semibold text-white">{ticket.subject}</p>
-                          <span className="rounded-full bg-white/10 px-3 py-1 text-xs capitalize text-white/70">{ticket.status}</span>
-                        </div>
-                        <p className="text-white/70">{ticket.message}</p>
-                        <p className="mt-2 text-xs text-white/40">{new Date(ticket.created_at).toLocaleDateString()}</p>
-                      </div>
-                    ))}
-                    {tickets.length > 3 && (
-                      <Button
-                        variant="ghost"
-                        className="w-full text-yellow-400 hover:text-yellow-300"
-                        onClick={() => {
-                          setActiveView('all-tickets');
-                          setSupportTicketExpanded(true);
-                        }}
-                      >
-                        View All Tickets <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
+          <section className="grid gap-6">
             <div className="rounded-2xl border border-white/5 bg-[#0F1A2B]/70 p-6">
               <h4 className="mb-4 text-xl font-semibold text-white">Account Information</h4>
               <div className="space-y-4 text-sm text-white/80">
