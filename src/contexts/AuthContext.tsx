@@ -9,6 +9,17 @@ interface Profile {
   full_name: string | null;
   role: 'admin' | 'user';
   mining_enabled?: boolean;
+  referral_code?: string;
+  referral_balance?: number;
+  username?: string;
+  mobile?: string;
+  country?: string;
+  address?: string;
+  state?: string;
+  zip_code?: string;
+  city?: string;
+  usdt_wallet_address?: string;
+  two_fa_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }

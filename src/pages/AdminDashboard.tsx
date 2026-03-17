@@ -27,6 +27,9 @@ import {
   Users,
   X,
   Zap,
+  Headphones,
+  MessageSquare,
+  AlertCircle,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
@@ -62,13 +65,31 @@ interface MiningStats {
   user_email?: string;
 }
 
+interface SupportTicket {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: string;
+  priority: string;
+  admin_response: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 const AdminDashboard = () => {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [allStats, setAllStats] = useState<MiningStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<'overview' | 'users' | 'analytics' | 'settings'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'users' | 'analytics' | 'settings' | 'support'>('overview');
+  const [allTickets, setAllTickets] = useState<SupportTicket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [adminResponse, setAdminResponse] = useState('');
+  const [updatingTicket, setUpdatingTicket] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [savingMiningUserId, setSavingMiningUserId] = useState<string | null>(null);
   const [balanceEditUser, setBalanceEditUser] = useState<User | null>(null);
@@ -97,22 +118,27 @@ const AdminDashboard = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (usersError) {
-        console.error('Error fetching users:', usersError);
-        toast({
-          title: 'Error',
-          description: 'Failed to load users',
-          variant: 'destructive',
-        });
-      } else {
-        console.log('Users fetched:', allUsers?.length);
+      if (usersError) throw usersError;
       setUsers(allUsers || []);
-    }
+
+      // Fetch all tickets
+      const { data: ticketData, error: ticketError } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (ticketError) throw ticketError;
+      setAllTickets(ticketData || []);
 
       // Fetch all mining stats
       const { data: stats, error: statsError } = await supabase
         .from('mining_stats')
-        .select('*')
+        .select(`
+          *,
+          user:profiles (
+            email
+          )
+        `)
         .order('total_mined', { ascending: false });
 
       if (statsError) {
@@ -122,32 +148,57 @@ const AdminDashboard = () => {
         setAllStats([]);
       } else if (stats) {
         // Get user emails for stats
-        const statsWithEmails = await Promise.all(
-          stats.map(async (stat) => {
-            const { data: userProfile } = await supabase
-              .from('profiles')
-              .select('email')
-              .eq('user_id', stat.user_id)
-              .single();
-            return {
-              ...stat,
-              user_email: userProfile?.email || 'Unknown',
-            };
-          })
-        );
+        const statsWithEmails = stats.map((stat: any) => ({
+            ...stat,
+            user_email: stat.user?.email || 'Unknown',
+          }));
         setAllStats(statsWithEmails);
       } else {
         setAllStats([]);
       }
-    } catch (error) {
-      console.error('Error fetching data:', error);
+      setLoading(false);
+    } catch (error: any) {
+      console.error('Error in AdminDashboard fetchData:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load admin data',
+        description: error.message || 'Failed to fetch dashboard data',
+        variant: 'destructive',
+      });
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateTicketStatus = async () => {
+    if (!selectedTicket || !adminResponse) return;
+    setUpdatingTicket(true);
+    try {
+      const { error } = await supabase
+        .from('support_tickets')
+        .update({
+          status: selectedTicket.status,
+          admin_response: adminResponse,
+          resolved_at: selectedTicket.status === 'resolved' ? new Date().toISOString() : null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', selectedTicket.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Ticket updated successfully',
+      });
+      setSelectedTicket(null);
+      setAdminResponse('');
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update ticket',
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setUpdatingTicket(false);
     }
   };
 
@@ -369,13 +420,23 @@ const AdminDashboard = () => {
                 setActiveView('settings');
                 setMobileMenuOpen(false);
               }}
-              className={`flex items-center gap-2 transition-colors py-2 lg:py-0 ${
-                activeView === 'settings' ? 'text-yellow-400' : 'text-white/70 hover:text-white'
-              }`}
-            >
-              <Settings className="h-4 w-4" /> Settings
-            </button>
-          </nav>
+              className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
+              activeView === 'settings' ? 'bg-yellow-500 text-black font-bold' : 'text-white/70 hover:bg-white/5'
+            }`}
+          >
+            <Settings className="h-5 w-5" />
+            Settings
+          </button>
+          <button
+            onClick={() => { setActiveView('support'); setMobileMenuOpen(false); }}
+            className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
+              activeView === 'support' ? 'bg-yellow-500 text-black font-bold' : 'text-white/70 hover:bg-white/5'
+            }`}
+          >
+            <Headphones className="h-5 w-5" />
+            Support Tickets
+          </button>
+        </nav>
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="hidden text-right text-xs text-white/60 sm:block">
               <p className="font-semibold text-white">{profile?.full_name || profile?.email}</p>
@@ -481,6 +542,94 @@ const AdminDashboard = () => {
               <div>
                 <h1 className="text-2xl font-semibold text-white">Settings</h1>
                 <p className="mt-1 text-white/60">Mining is controlled per user in the User Directory. Use the Mining column to enable or disable mining for each user.</p>
+              </div>
+            </div>
+          )}
+
+
+          {/* Support Tickets View */}
+          {activeView === 'support' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-semibold text-white">Support Tickets</h1>
+                  <p className="mt-1 text-white/60">Manage and respond to user support requests</p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-white/5 bg-[#0B152F] overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-[#0F1F3F] text-white/70">
+                      <tr>
+                        <th className="py-4 px-6">User</th>
+                        <th className="py-4 px-6">Subject</th>
+                        <th className="py-4 px-6">Status</th>
+                        <th className="py-4 px-6">Priority</th>
+                        <th className="py-4 px-6">Date</th>
+                        <th className="py-4 px-6">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {allTickets.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-white/50">
+                            No support tickets found
+                          </td>
+                        </tr>
+                      ) : (
+                        allTickets.map((ticket) => (
+                          <tr key={ticket.id} className="text-white/80 hover:bg-white/5 transition-colors">
+                            <td className="py-4 px-6">
+                              <div className="font-medium text-white">{ticket.name}</div>
+                              <div className="text-xs text-white/40">{ticket.email}</div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <div className="font-medium text-white">{ticket.subject}</div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                ticket.status === 'open' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                                ticket.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                                ticket.status === 'resolved' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                                'bg-red-500/20 text-red-400 border border-red-500/30'
+                              }`}>
+                                {ticket.status.replace('_', ' ')}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6">
+                              <span className={`flex items-center gap-1.5 ${
+                                ticket.priority === 'urgent' ? 'text-red-400' :
+                                ticket.priority === 'high' ? 'text-orange-400' :
+                                ticket.priority === 'medium' ? 'text-yellow-400' :
+                                'text-green-400'
+                              }`}>
+                                <AlertCircle className="h-3 w-3" />
+                                <span className="capitalize">{ticket.priority}</span>
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 text-white/60">
+                              {new Date(ticket.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="py-4 px-6">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10"
+                                onClick={() => {
+                                  setSelectedTicket(ticket);
+                                  setAdminResponse(ticket.admin_response || '');
+                                }}
+                              >
+                                Manage
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -736,6 +885,90 @@ const AdminDashboard = () => {
           )}
         </section>
       </main>
+      {/* Ticket Management Dialog */}
+      <Dialog open={!!selectedTicket} onOpenChange={(open) => !open && setSelectedTicket(null)}>
+        <DialogContent className="max-w-2xl bg-[#0B152F] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Handle Support Ticket</DialogTitle>
+            <DialogDescription className="text-white/60">
+              Provide a response and update the ticket status.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedTicket && (
+            <div className="space-y-6 mt-4">
+              <div className="grid grid-cols-2 gap-4 rounded-xl bg-white/5 p-4">
+                <div>
+                  <p className="text-xs text-white/40 uppercase font-bold tracking-wider">User</p>
+                  <p className="font-medium">{selectedTicket.name}</p>
+                  <p className="text-sm text-white/50">{selectedTicket.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/40 uppercase font-bold tracking-wider">Subject</p>
+                  <p className="font-medium">{selectedTicket.subject}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-xs text-white/40 uppercase font-bold tracking-wider">Message</p>
+                <div className="rounded-xl bg-white/5 p-4 text-sm text-white/80 max-h-[150px] overflow-y-auto">
+                  {selectedTicket.message}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Current Status</Label>
+                  <select
+                    value={selectedTicket.status}
+                    onChange={(e) => setSelectedTicket({ ...selectedTicket, status: e.target.value })}
+                    className="w-full bg-[#0F1F3F] text-white border border-white/10 rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-yellow-500"
+                  >
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Priority</Label>
+                  <div className={`px-3 py-2 rounded-md border border-white/10 bg-white/5 capitalize ${
+                    selectedTicket.priority === 'urgent' ? 'text-red-400' :
+                    selectedTicket.priority === 'high' ? 'text-orange-400' :
+                    selectedTicket.priority === 'medium' ? 'text-yellow-400' :
+                    'text-green-400'
+                  }`}>
+                    {selectedTicket.priority}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Admin Response</Label>
+                <Textarea
+                  value={adminResponse}
+                  onChange={(e) => setAdminResponse(e.target.value)}
+                  className="bg-[#0F1F3F] text-white border-white/10 min-h-[120px]"
+                  placeholder="Type your response here..."
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="mt-6">
+            <Button variant="ghost" onClick={() => setSelectedTicket(null)} className="text-white hover:bg-white/5">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUpdateTicketStatus} 
+              disabled={updatingTicket || !adminResponse}
+              className="bg-yellow-500 text-black hover:bg-yellow-400"
+            >
+              {updatingTicket ? 'Updating...' : 'Save & Update'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

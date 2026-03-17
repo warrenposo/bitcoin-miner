@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   LogOut,
+  Headphones,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,6 +50,7 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
   const [depositExpanded, setDepositExpanded] = useState(false);
   const [withdrawExpanded, setWithdrawExpanded] = useState(false);
   const [startMiningExpanded, setStartMiningExpanded] = useState(false);
+  const [supportExpanded, setSupportExpanded] = useState(false);
 
   // Auto-expand menus based on active view
   useEffect(() => {
@@ -67,6 +69,9 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
     }
     if (location.pathname === '/start-mining') {
       setStartMiningExpanded(true);
+    }
+    if (activeView?.startsWith('support-')) {
+      setSupportExpanded(true);
     }
   }, [activeView, location.pathname]);
 
@@ -104,6 +109,14 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
         { label: 'My Referrals', view: 'my-referrals' },
         { label: 'Referral Bonus Logs', view: 'referral-bonus-logs' },
         { label: 'Withdraw Logs', view: 'withdraw-logs' },
+      ],
+    },
+    {
+      label: 'Support Ticket',
+      icon: Headphones,
+      subItems: [
+        { label: 'New Ticket', view: 'support-new' },
+        { label: 'All Tickets', view: 'support-all' },
       ],
     },
 
@@ -157,6 +170,16 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
         setDepositExpanded(false);
         setWithdrawExpanded(false);
         setStartMiningExpanded(!startMiningExpanded);
+      } else if (item.label === 'Support Ticket') {
+        setReferralExpanded(false);
+        setAccountExpanded(false);
+        setDepositExpanded(false);
+        setWithdrawExpanded(false);
+        setStartMiningExpanded(false);
+        setSupportExpanded(!supportExpanded);
+        if (!supportExpanded && item.subItems.length > 0) {
+          onViewChange?.(item.subItems[0].view || '');
+        }
       }
     } else if (item.path) {
       navigate(item.path);
@@ -211,6 +234,8 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
         return withdrawExpanded;
       case 'Start Mining':
         return startMiningExpanded;
+      case 'Support Ticket':
+        return supportExpanded;
       default:
         return false;
     }
@@ -299,6 +324,7 @@ export const UserSidebar = ({ activeView, onViewChange, onSignOut }: UserSidebar
                             {subItem.view === 'profile' && <User className="h-4 w-4" />}
                             {subItem.view === 'wallets' && <Wallet className="h-4 w-4" />}
                             {subItem.view === 'change-password' && <Key className="h-4 w-4" />}
+                            {subItem.view?.startsWith('support-') && <Headphones className="h-4 w-4" />}
                             {subItem.label}
                           </button>
                         );

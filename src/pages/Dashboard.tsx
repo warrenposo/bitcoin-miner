@@ -19,6 +19,11 @@ import {
   Lock,
   CircleDollarSign,
   Headphones,
+  MessageSquare,
+  Paperclip,
+  Clock,
+  LifeBuoy,
+  AlertCircle,
 } from 'lucide-react';
 
 // WhatsApp Icon Component
@@ -107,7 +112,7 @@ const Dashboard = () => {
   });
   // Check for view from sessionStorage (set by navigation)
   const initialView = (sessionStorage.getItem('dashboard_view') as any) || 'dashboard';
-  const [activeView, setActiveView] = useState<'dashboard' | 'my-referrals' | 'referral-bonus-logs' | 'withdraw-logs' | 'profile' | 'wallets' | '2fa-security' | 'change-password' | 'team' | 'about-us'>(initialView);
+  const [activeView, setActiveView] = useState<'dashboard' | 'my-referrals' | 'referral-bonus-logs' | 'withdraw-logs' | 'profile' | 'wallets' | '2fa-security' | 'change-password' | 'team' | 'about-us' | 'support-new' | 'support-all'>(initialView);
 
   // Clear sessionStorage view after using it
   useEffect(() => {
@@ -165,6 +170,11 @@ const Dashboard = () => {
     newPassword: '',
     confirmPassword: '',
   });
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [ticketSubject, setTicketSubject] = useState('');
+  const [ticketPriority, setTicketPriority] = useState('medium');
+  const [ticketMessage, setTicketMessage] = useState('');
+  const [submittingTicket, setSubmittingTicket] = useState(false);
 
   const copy = translations[language];
 
@@ -250,6 +260,15 @@ const Dashboard = () => {
         .eq('user_id', user!.id)
         .maybeSingle();
       setReferralBalance(profileRow?.referral_balance != null ? Number(profileRow.referral_balance) : 0);
+      
+      // Fetch tickets
+      const { data: ticketData } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false });
+      setTickets(ticketData || []);
+
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -605,6 +624,207 @@ const Dashboard = () => {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* New Support Ticket Page */}
+          {activeView === 'support-new' && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <LifeBuoy className="h-8 w-8 text-yellow-400" />
+                <h2 className="text-3xl font-bold text-white">Open New Ticket</h2>
+              </div>
+              
+              <form 
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!ticketSubject || !ticketMessage) {
+                    toast({
+                      title: 'Error',
+                      description: 'Please fill in all fields',
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
+
+                  setSubmittingTicket(true);
+                  try {
+                    const { error } = await supabase
+                      .from('support_tickets')
+                      .insert({
+                        user_id: user!.id,
+                        name: profile?.full_name || user?.email?.split('@')[0] || 'User',
+                        email: user?.email,
+                        subject: ticketSubject,
+                        message: ticketMessage,
+                        priority: ticketPriority,
+                        status: 'open',
+                      });
+
+                    if (error) throw error;
+
+                    toast({
+                      title: 'Success',
+                      description: 'Support ticket submitted successfully',
+                    });
+                    setTicketSubject('');
+                    setTicketMessage('');
+                    setActiveView('support-all');
+                    fetchData();
+                  } catch (error: any) {
+                    toast({
+                      title: 'Error',
+                      description: error.message || 'Failed to submit ticket',
+                      variant: 'destructive',
+                    });
+                  } finally {
+                    setSubmittingTicket(false);
+                  }
+                }}
+                className="rounded-lg border border-white/5 bg-[#111B2D]/70 p-6 space-y-4"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-white/70">Subject</Label>
+                    <Input
+                      value={ticketSubject}
+                      onChange={(e) => setTicketSubject(e.target.value)}
+                      required
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="Enter ticket subject"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">Priority</Label>
+                    <select
+                      value={ticketPriority}
+                      onChange={(e) => setTicketPriority(e.target.value)}
+                      className="w-full bg-[#0B1421] text-white border border-white/10 rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-yellow-500"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white/70">Message</Label>
+                  <Textarea
+                    value={ticketMessage}
+                    onChange={(e) => setTicketMessage(e.target.value)}
+                    required
+                    className="bg-[#0B1421] text-white border-white/10 min-h-[200px]"
+                    placeholder="Describe your issue in detail..."
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={submittingTicket}
+                  className="w-full bg-yellow-500 text-black hover:bg-yellow-400 mt-6"
+                >
+                  {submittingTicket ? 'Submitting...' : 'Submit Ticket'}
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {/* All Support Tickets Page */}
+          {activeView === 'support-all' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <MessageSquare className="h-8 w-8 text-yellow-400" />
+                  <h2 className="text-3xl font-bold text-white">Support Tickets</h2>
+                </div>
+                <Button 
+                  onClick={() => setActiveView('support-new')}
+                  className="bg-yellow-500 text-black hover:bg-yellow-400"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Ticket
+                </Button>
+              </div>
+
+              <div className="rounded-lg border border-white/5 bg-[#111B2D]/70 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-[#0B1421] text-white/70">
+                      <tr>
+                        <th className="py-4 px-6">Subject</th>
+                        <th className="py-4 px-6">Status</th>
+                        <th className="py-4 px-6">Priority</th>
+                        <th className="py-4 px-6">Last Reply</th>
+                        <th className="py-4 px-6">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {tickets.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-12 text-center text-white/50">
+                            <div className="flex flex-col items-center gap-2">
+                              <Info className="h-8 w-8 opacity-20" />
+                              <p>No support tickets found</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        tickets.map((ticket) => (
+                          <tr key={ticket.id} className="text-white/80 hover:bg-white/5 transition-colors">
+                            <td className="py-4 px-6">
+                              <div className="font-medium text-white">{ticket.subject}</div>
+                              <div className="text-xs text-white/40 mt-1">Ticket ID: #{ticket.id.slice(0, 8)}</div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                ticket.status === 'open' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                                ticket.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                                ticket.status === 'resolved' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                                'bg-red-500/20 text-red-400 border border-red-500/30'
+                              }`}>
+                                {ticket.status.replace('_', ' ')}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6">
+                              <span className={`flex items-center gap-1.5 ${
+                                ticket.priority === 'urgent' ? 'text-red-400' :
+                                ticket.priority === 'high' ? 'text-orange-400' :
+                                ticket.priority === 'medium' ? 'text-yellow-400' :
+                                'text-green-400'
+                              }`}>
+                                <AlertCircle className="h-3 w-3" />
+                                <span className="capitalize">{ticket.priority}</span>
+                              </span>
+                            </td>
+                            <td className="py-4 px-6">
+                              <div className="flex items-center gap-2 text-white/60">
+                                <Clock className="h-3 w-3" />
+                                {new Date(ticket.updated_at).toLocaleDateString()}
+                              </div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10"
+                                onClick={() => {
+                                  // Detailed view could be implemented later if needed
+                                  toast({
+                                    title: "Ticket Details",
+                                    description: `Status: ${ticket.status}. Admin Response: ${ticket.admin_response || 'No response yet.'}`,
+                                  });
+                                }}
+                              >
+                                View
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
