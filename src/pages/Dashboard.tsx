@@ -1776,7 +1776,11 @@ const Dashboard = () => {
                     <p className="text-sm text-white/60">Need live help?</p>
                     <p className="text-white">VIP Customers Only</p>
                   </div>
-                  <Button variant="outline" className="border-yellow-500 text-yellow-400 hover:bg-yellow-500/10">
+                  <Button 
+                    variant="outline" 
+                    className="border-yellow-500 text-yellow-400 hover:bg-yellow-500/10"
+                    onClick={() => setActiveView('support-new')}
+                  >
                     <Headphones className="mr-2 h-4 w-4" />
                     Contact Support
                   </Button>
