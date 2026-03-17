@@ -18,6 +18,7 @@ import {
   LogOut,
   Lock,
   CircleDollarSign,
+  Headphones,
 } from 'lucide-react';
 
 // WhatsApp Icon Component
