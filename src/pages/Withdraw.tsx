@@ -324,7 +324,7 @@ const Withdraw = () => {
                 </div>
 
                 <p className="text-white/50 text-xs">
-                  Disclaimer: Bonus (e.g. referral bonus) is not withdrawable. Only mined/available balance can be withdrawn.
+                  Disclaimer: Bonus (e.g. referral bonus) is not withdrawable. Only mined balance can be withdrawn.
                 </p>
 
                 {/* Submit Button */}
