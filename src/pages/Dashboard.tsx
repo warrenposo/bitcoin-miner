@@ -402,7 +402,7 @@ const Dashboard = () => {
       <div className="flex">
         <UserSidebar 
           activeView={activeView} 
-          onViewChange={setActiveView}
+          onViewChange={(view) => setActiveView(view as any)}
           onSignOut={handleSignOut}
         />
 
@@ -847,7 +847,7 @@ const Dashboard = () => {
                           full_name: fullName,
                           email: profileData.email,
                           username: profileData.username,
-                          mobile: profileData.mobile,
+                            mobile: profileData.phone,
                           country_code: profileData.countryCode,
                           country: profileData.country,
                           address: profileData.address,
@@ -1633,8 +1633,8 @@ const Dashboard = () => {
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <Mail className="h-5 w-5 text-yellow-400" />
-                      <a href="mailto:btcminingbase@gmail.com" className="text-white/70 hover:text-yellow-400 transition-colors">
-                        btcminingbase@gmail.com
+                      <a href="mailto:support@btcminingbase.com" className="text-white/70 hover:text-yellow-400 transition-colors">
+                        support@btcminingbase.com
                       </a>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1785,7 +1785,7 @@ const Dashboard = () => {
                     Contact Support
                   </Button>
                 </div>
-                <p className="mt-4 text-sm text-white/50">btcminingbase@gmail.com</p>
+                <p className="mt-4 text-sm text-white/50">support@btcminingbase.com</p>
                 <p className="text-xs text-white/40">57 Kingfisher Grove, Willenhall, England, WV12 5HG (Company No. 15415402)</p>
               </div>
             </div>

@@ -77,7 +77,7 @@ const TermsOfService = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-white">8. Contact Information</h2>
             <p>
-              If you have any questions about these Terms of Service, please contact us at btcminingbase@gmail.com
+              If you have any questions about these Terms of Service, please contact us at support@btcminingbase.com
             </p>
           </section>
 

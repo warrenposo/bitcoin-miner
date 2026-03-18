@@ -553,6 +553,10 @@ const Deposit = () => {
                 </ul>
               </div>
 
+              <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-100">
+                Minimum deposit is <span className="font-semibold">$70</span> to buy a plan.
+              </div>
+
               {depositStage === 'form' && (
                 <div className="rounded-xl border border-white/5 bg-[#111B2D] p-6">
                   <div className="mb-6 flex items-center justify-between">

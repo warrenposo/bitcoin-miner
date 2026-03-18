@@ -102,8 +102,8 @@ export const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-yellow-400" />
-                <a href="mailto:btcminingbase@gmail.com" className="text-white/70 hover:text-yellow-400 transition-colors">
-                  btcminingbase@gmail.com
+                <a href="mailto:support@btcminingbase.com" className="text-white/70 hover:text-yellow-400 transition-colors">
+                  support@btcminingbase.com
                 </a>
               </li>
               <li className="flex items-center gap-3">

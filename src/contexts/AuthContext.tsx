@@ -9,6 +9,7 @@ interface Profile {
   full_name: string | null;
   role: 'admin' | 'user';
   mining_enabled?: boolean;
+  mining_stop_balance?: number | null;
   referral_code?: string;
   referral_balance?: number;
   username?: string;

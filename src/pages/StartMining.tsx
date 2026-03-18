@@ -37,7 +37,7 @@ interface MiningPlan {
   price: number;
   duration: number;
   hardware: string;
-  dailyMining: { btc?: number; ltc?: number; usd: number };
+  dailyMining?: { btc?: number; ltc?: number; usd: number };
   monthlyMining?: { btc?: number; ltc?: number; usd: number };
   totalMining?: { btc?: number; ltc?: number; usd: number };
   referralRewards?: number;
@@ -500,15 +500,15 @@ const StartMining = () => {
     // Set the selected plan first
     setSelectedPlan(plan);
 
-    // Fetch latest balance before checking
-    await fetchUserBalance();
+    // Fetch latest balance and use the returned value (state updates are async)
+    const currentBalance = await fetchUserBalance();
 
     // Calculate total required (plan price + 2% charge)
     const calculatedCharge = plan.price * 0.02;
     const totalRequired = plan.price + calculatedCharge;
 
     // Check if user has sufficient balance
-    if (userBalance < totalRequired) {
+    if (currentBalance < totalRequired) {
       setRequiredAmount(totalRequired);
       setShowInsufficientFundsModal(true);
       // Don't proceed to purchase form yet
@@ -777,9 +777,9 @@ const StartMining = () => {
   // Per-user mining: from profile (admin enables/disables per user)
   const miningEnabled = profile?.mining_enabled ?? true;
 
-  // Fetch user balance
-  const fetchUserBalance = async () => {
-    if (!user) return;
+  // Fetch user balance (returns the balance so callers can use it immediately)
+  const fetchUserBalance = async (): Promise<number> => {
+    if (!user) return 0;
     try {
       const { data, error } = await supabase
         .from('mining_stats')
@@ -791,10 +791,13 @@ const StartMining = () => {
         throw error;
       }
 
-      setUserBalance(data?.total_mined || 0);
+      const balance = data?.total_mined || 0;
+      setUserBalance(balance);
+      return Number(balance);
     } catch (error) {
       console.error('Error fetching user balance:', error);
       setUserBalance(0);
+      return 0;
     }
   };
 
@@ -1169,7 +1172,7 @@ const StartMining = () => {
                   <ol className="list-decimal list-inside space-y-1 ml-4">
                     <li>Choose one of the below miners</li>
                     <li>Click on "Buy Now" button and pay the miner price</li>
-                    <li>Your miner is launched and adds bitcoin to your balance every second (until 1 year)</li>
+                    <li>Your miner is launched and adds bitcoin to your balance every second (until your subscription ends)</li>
                     <li>Your bitcoin increase every minute and you can withdraw it or buy a new bigger miner</li>
                   </ol>
                   <p>
@@ -1278,29 +1281,43 @@ const StartMining = () => {
                   <h2 className="text-2xl font-bold text-center mb-8">Our Partners</h2>
                   <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
                     {[
-                      { name: 'Google' },
-                      { name: 'Forbes' },
-                      { name: 'Yahoo!' },
-                      { name: 'YouTube' },
-                      { name: 'BINANCE' },
-                      { name: 'Coinbase' },
-                      { name: 'CoinPedia' },
-                      { name: 'AMBCRYPTO' },
-                      { name: 'BENZINGA' },
-                      { name: 'CoinGape' },
-                      { name: 'GlobeNewswire' },
-                      { name: 'cryptonews' },
-                      { name: 'Analytics Insight' },
-                      { name: 'SOURCEFORGE' },
-                      { name: 'MarketWatch' },
+                      { name: 'Google', logo: 'https://cdn.simpleicons.org/google/4285F4' },
+                      { name: 'Forbes', logo: 'https://cdn.simpleicons.org/forbes/0066FF' },
+                      { name: 'Yahoo!', logo: 'https://cdn.simpleicons.org/yahoo/410093' },
+                      { name: 'YouTube', logo: 'https://cdn.simpleicons.org/youtube/FF0000' },
+                      { name: 'BINANCE', logo: 'https://cdn.simpleicons.org/binance/F0B90B' },
+                      { name: 'Coinbase', logo: 'https://cdn.simpleicons.org/coinbase/0052FF' },
+                      { name: 'CoinPedia', logo: 'https://cdn.simpleicons.org/bitcoin/F7931A' },
+                      { name: 'AMBCRYPTO', logo: 'https://cdn.simpleicons.org/bitcoin/F7931A' },
+                      { name: 'BENZINGA', logo: 'https://cdn.simpleicons.org/benzinga/00A1E0' },
+                      { name: 'CoinGape', logo: 'https://cdn.simpleicons.org/bitcoin/F7931A' },
+                      { name: 'GlobeNewswire', logo: 'https://cdn.simpleicons.org/globenewswire/1B2A41' },
+                      { name: 'cryptonews', logo: 'https://cdn.simpleicons.org/cryptonews/1B2A41' },
+                      { name: 'Analytics Insight', logo: 'https://cdn.simpleicons.org/analyticsinsight/0070F3' },
+                      { name: 'SOURCEFORGE', logo: 'https://cdn.simpleicons.org/sourceforge/F7931A' },
+                      { name: 'MarketWatch', logo: 'https://cdn.simpleicons.org/marketwatch/00A1E0' },
                     ].map((partner) => (
                       <div
                         key={partner.name}
-                        className="bg-white rounded-lg p-4 flex items-center justify-center h-20 hover:bg-gray-50 transition shadow-sm border border-gray-200"
+                        className="bg-white rounded-lg p-3 flex items-center justify-center h-20 hover:bg-gray-50 transition shadow-sm border border-gray-200"
                       >
-                        <span className="text-gray-700 text-xs font-semibold text-center">
-                          {partner.name}
-                        </span>
+                        <img
+                          src={partner.logo}
+                          alt={partner.name}
+                          className="max-w-full max-h-full object-contain w-16 h-10"
+                          loading="lazy"
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            img.style.display = 'none';
+                            const parent = img.parentElement;
+                            if (!parent) return;
+                            if (parent.querySelector('.partner-fallback')) return;
+                            const fallback = document.createElement('span');
+                            fallback.className = 'partner-fallback text-gray-600 text-[10px] font-semibold text-center px-1';
+                            fallback.textContent = partner.name;
+                            parent.appendChild(fallback);
+                          }}
+                        />
                       </div>
                     ))}
                   </div>
@@ -1346,7 +1363,7 @@ const StartMining = () => {
                         </li>
                         <li className="flex items-center gap-2">
                           <span>✉️</span>
-                          <span>btcminingbase@gmail.com</span>
+                          <span>support@btcminingbase.com</span>
                         </li>
                         <li className="flex items-center gap-2">
                           <span>📍</span>
@@ -1412,7 +1429,7 @@ const StartMining = () => {
                           <td className="py-4 px-4">
                             <Button
                               onClick={() => {
-                                setSelectedPlan(plan);
+                                setSelectedPurchasedPlan(plan);
                                 setIsDialogOpen(true);
                               }}
                               className="bg-yellow-500 text-black hover:bg-yellow-400"
@@ -1618,6 +1635,7 @@ const StartMining = () => {
                 </p>
                 <div className="flex flex-col gap-3 pt-4">
                   <Button
+                    type="button"
                     onClick={() => {
                       setShowStartSessionModal(false);
                       setActiveView('buy');
@@ -1627,8 +1645,10 @@ const StartMining = () => {
                     Go to Buy Plan Page
                   </Button>
                   <Button
+                    type="button"
                     onClick={() => {
                       setShowStartSessionModal(false);
+                      sessionStorage.setItem('/deposit_view', 'deposit');
                       navigate('/deposit');
                     }}
                     variant="outline"
@@ -1672,13 +1692,16 @@ const StartMining = () => {
                   Your current balance: <span className="font-semibold">${userBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </p>
                 <p className="text-white/80">
-                  You need to deposit <span className="font-semibold text-yellow-400">${(requiredAmount - userBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> more.
+                  You need to deposit <span className="font-semibold text-yellow-400">${Math.max(requiredAmount - userBalance, 70).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> more.
                 </p>
                 <div className="flex flex-col gap-3 pt-4">
                   <Button
+                    type="button"
                     onClick={() => {
-                      // Store amount in sessionStorage for deposit page
-                      sessionStorage.setItem('deposit_amount', requiredAmount.toString());
+                      const depositAmount = Math.max(requiredAmount - userBalance, 70);
+                      // Prefill deposit page (deposit_amount expects the "amount" you want to deposit)
+                      sessionStorage.setItem('/deposit_view', 'deposit');
+                      sessionStorage.setItem('deposit_amount', depositAmount.toString());
                       setShowInsufficientFundsModal(false);
                       navigate('/deposit');
                     }}
@@ -1687,9 +1710,11 @@ const StartMining = () => {
                     Go to Deposit Page
                   </Button>
                   <Button
+                    type="button"
                     onClick={() => {
-                      // Navigate to deposit page with pre-filled amount
-                      sessionStorage.setItem('deposit_amount', requiredAmount.toString());
+                      const depositAmount = Math.max(requiredAmount - userBalance, 70);
+                      sessionStorage.setItem('/deposit_view', 'deposit');
+                      sessionStorage.setItem('deposit_amount', depositAmount.toString());
                       setShowInsufficientFundsModal(false);
                       navigate('/deposit');
                     }}
@@ -1699,6 +1724,7 @@ const StartMining = () => {
                     Continue with Payment Gateway
                   </Button>
                   <Button
+                    type="button"
                     onClick={() => {
                       setShowInsufficientFundsModal(false);
                       setSelectedPlan(null);
