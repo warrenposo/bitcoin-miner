@@ -1069,6 +1069,25 @@ const StartMining = () => {
     }
   };
 
+  const handleClearStopBalance = async () => {
+    if (!user) return;
+    setSavingStopBalance(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ mining_stop_balance: null, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+      if (error) throw error;
+      setMiningStopBalance(null);
+      setMiningStopBalanceInput('');
+      toast({ title: 'Cleared', description: 'Stop balance cleared (no limit).' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e?.message || 'Failed to clear', variant: 'destructive' });
+    } finally {
+      setSavingStopBalance(false);
+    }
+  };
+
   useEffect(() => {
     setMiningStopBalanceInput(miningStopBalance != null ? String(miningStopBalance) : '');
   }, [miningStopBalance]);
@@ -1493,6 +1512,14 @@ const StartMining = () => {
                     className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
                   >
                     {savingStopBalance ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button
+                    onClick={handleClearStopBalance}
+                    disabled={savingStopBalance || miningStopBalanceInput === ''}
+                    variant="outline"
+                    className="border-white/10 text-white/80 hover:bg-white/10"
+                  >
+                    Clear
                   </Button>
                 </div>
               </div>
