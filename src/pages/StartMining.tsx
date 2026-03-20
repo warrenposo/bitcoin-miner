@@ -1488,28 +1488,27 @@ const StartMining = () => {
                   <h2 className="text-2xl font-bold text-center mb-8">Our Partners</h2>
                   <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
                     {[
-                      { name: 'Google', logo: 'https://cdn.simpleicons.org/google/4285F4' },
-                      { name: 'Forbes', logo: 'https://cdn.simpleicons.org/forbes/0066FF' },
-                      { name: 'Yahoo!', logo: 'https://cdn.simpleicons.org/yahoo/410093' },
-                      { name: 'YouTube', logo: 'https://cdn.simpleicons.org/youtube/FF0000' },
-                      { name: 'BINANCE', logo: 'https://cdn.simpleicons.org/binance/F0B90B' },
-                      { name: 'Coinbase', logo: 'https://cdn.simpleicons.org/coinbase/0052FF' },
-                      { name: 'CoinPedia', logo: 'https://cdn.simpleicons.org/bitcoin/F7931A' },
-                      { name: 'AMBCRYPTO', logo: 'https://cdn.simpleicons.org/bitcoin/F7931A' },
-                      { name: 'BENZINGA', logo: 'https://cdn.simpleicons.org/benzinga/00A1E0' },
-                      { name: 'CoinGape', logo: 'https://cdn.simpleicons.org/bitcoin/F7931A' },
-                      { name: 'GlobeNewswire', logo: 'https://cdn.simpleicons.org/globenewswire/1B2A41' },
-                      { name: 'cryptonews', logo: 'https://cdn.simpleicons.org/cryptonews/1B2A41' },
-                      { name: 'Analytics Insight', logo: 'https://cdn.simpleicons.org/analyticsinsight/0070F3' },
-                      { name: 'SOURCEFORGE', logo: 'https://cdn.simpleicons.org/sourceforge/F7931A' },
-                      { name: 'MarketWatch', logo: 'https://cdn.simpleicons.org/marketwatch/00A1E0' },
+                      { name: 'Google', domain: 'google.com' },
+                      { name: 'Forbes', domain: 'forbes.com' },
+                      { name: 'Yahoo!', domain: 'yahoo.com' },
+                      { name: 'YouTube', domain: 'youtube.com' },
+                      { name: 'BINANCE', domain: 'binance.com' },
+                      { name: 'Coinbase', domain: 'coinbase.com' },
+                      { name: 'CoinPedia', domain: 'coinpedia.org' },
+                      { name: 'AMBCRYPTO', domain: 'ambcrypto.com' },
+                      { name: 'BENZINGA', domain: 'benzinga.com' },
+                      { name: 'GlobeNewswire', domain: 'globenewswire.com' },
+                      { name: 'cryptonews', domain: 'cryptonews.com' },
+                      { name: 'Analytics Insight', domain: 'analyticsinsight.net' },
+                      { name: 'SOURCEFORGE', domain: 'sourceforge.net' },
+                      { name: 'MarketWatch', domain: 'marketwatch.com' },
                     ].map((partner) => (
                       <div
                         key={partner.name}
                         className="bg-white rounded-lg p-3 flex items-center justify-center h-20 hover:bg-gray-50 transition shadow-sm border border-gray-200"
                       >
                         <img
-                          src={partner.logo}
+                          src={`https://www.google.com/s2/favicons?domain=${partner.domain}&sz=128`}
                           alt={partner.name}
                           className="max-w-full max-h-full object-contain w-16 h-10"
                           loading="lazy"
