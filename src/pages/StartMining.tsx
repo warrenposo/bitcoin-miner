@@ -30,6 +30,11 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { UserSidebar } from '@/components/UserSidebar';
 import { WHATSAPP_LINK } from '@/constants/contact';
+import btcQR from '@/assets/btc33.jpeg';
+import erc20QR from '@/assets/eth11.jpeg';
+import ethQR from '@/assets/eth11.jpeg';
+import trc20QR from '@/assets/trc22.jfif';
+import solanaQR from '@/assets/solana.jpeg';
 
 interface MiningPlan {
   id: string;
@@ -497,8 +502,14 @@ const StartMining = () => {
   };
 
   const handleBuyPlan = async (plan: MiningPlan) => {
-    // Set the selected plan first
-    setSelectedPlan(plan);
+    // Clear any previous purchase selection while we validate balance
+    setSelectedPlan(null);
+    setPurchaseStage('form');
+    setGateway('');
+    setCharge(0);
+    setPayable(0);
+    setPreviewData(null);
+    setActivePurchase(null);
 
     // Fetch latest balance and use the returned value (state updates are async)
     const currentBalance = await fetchUserBalance();
@@ -516,6 +527,7 @@ const StartMining = () => {
     }
 
     // User has sufficient balance, proceed with purchase
+    setSelectedPlan(plan);
     setPurchaseStage('form');
     setCharge(calculatedCharge);
     setPayable(totalRequired);
@@ -1192,88 +1204,283 @@ const StartMining = () => {
               </div>
 
               {/* Mining Plans Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {currentPlans.map((plan) => {
-                  const progress = (plan.sold / plan.available) * 100;
-                  const remaining = plan.available - plan.sold;
+              {!selectedPlan && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {currentPlans.map((plan) => {
+                    const progress = (plan.sold / plan.available) * 100;
 
-                  return (
-                    <Card key={plan.id} className="bg-[#111B2D] border-white/5 overflow-hidden">
-                      {/* Header */}
-                      <div className="bg-yellow-500 p-4">
-                        <div className="text-white text-sm font-semibold mb-2">{plan.name}</div>
-                        <div className="text-white text-2xl font-bold">
-                          ${plan.price.toLocaleString()}
-                          <span className="text-lg font-normal"> / {plan.duration} {plan.duration === 1 ? 'Day' : 'Days'}</span>
+                    return (
+                      <Card key={plan.id} className="bg-[#111B2D] border-white/5 overflow-hidden">
+                        {/* Header */}
+                        <div className="bg-yellow-500 p-4">
+                          <div className="text-white text-sm font-semibold mb-2">{plan.name}</div>
+                          <div className="text-white text-2xl font-bold">
+                            ${plan.price.toLocaleString()}
+                            <span className="text-lg font-normal"> / {plan.duration} {plan.duration === 1 ? 'Day' : 'Days'}</span>
+                          </div>
                         </div>
+
+                        {/* Body */}
+                        <CardContent className="p-4 space-y-3">
+                          <div className="flex items-center gap-2 text-white/80 text-sm">
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <span>{t.hardware}: {plan.hardware}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-white/80 text-sm">
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <span>{t.contractDuration}: {plan.duration} {plan.duration === 1 ? t.day : t.days}</span>
+                          </div>
+                          {plan.totalMining && (
+                            <div className="flex items-center gap-2 text-white/80 text-sm">
+                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                              <span>
+                                {t.totalMining}: {plan.totalMining.btc?.toFixed(6)} BTC=${((plan.totalMining.btc || 0) * btcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          )}
+                          {plan.dailyMining && (
+                            <div className="flex items-center gap-2 text-white/80 text-sm">
+                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                              <span>
+                                {t.dailyMining}: {plan.dailyMining.btc?.toFixed(6)} BTC=${((plan.dailyMining.btc || 0) * btcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          )}
+                          {plan.monthlyMining && (
+                            <div className="flex items-center gap-2 text-white/80 text-sm">
+                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                              <span>
+                                {t.monthlyMining}: {plan.monthlyMining.btc?.toFixed(6)} BTC=${((plan.monthlyMining.btc || 0) * btcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          )}
+                          {plan.referralRewards && (
+                            <div className="flex items-center gap-2 text-white/80 text-sm">
+                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                              <span>{t.referralRewards}: {plan.referralRewards} USDT</span>
+                            </div>
+                          )}
+
+                          {/* Progress Bar */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs text-white/60">
+                              <span>{plan.available} / {plan.sold} ({progress.toFixed(1)}%)</span>
+                            </div>
+                            <div className="relative h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                              <div
+                                className="absolute top-0 left-0 h-full bg-yellow-500 transition-all"
+                                style={{ width: `${progress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* Buy Now Button */}
+                          <Button
+                            onClick={() => handleBuyPlan(plan)}
+                            className="w-full bg-yellow-500 text-black hover:bg-yellow-400 font-semibold"
+                          >
+                            Buy Now
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Purchase Form */}
+              {purchaseStage === 'form' && selectedPlan && (
+                <div className="rounded-xl border border-white/5 bg-[#111B2D] p-6">
+                  <button
+                    onClick={handleStartNewPurchase}
+                    className="mb-4 flex items-center gap-2 text-sm text-white/60 hover:text-white"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Back to plans
+                  </button>
+                  <h2 className="text-xl font-semibold mb-2">Complete your purchase</h2>
+                  <p className="text-sm text-white/60 mb-6">
+                    Selected: {selectedPlan.name} — {formatUSD(selectedPlan.price)} + {formatUSD(charge)} charge ={' '}
+                    <span className="text-yellow-300 font-semibold">{formatUSD(payable)}</span>
+                  </p>
+
+                  <form onSubmit={handleSubmitPurchase} className="space-y-6">
+                    <div>
+                      <Label className="mb-2 block text-white/80">Select payment method *</Label>
+                      <Select
+                        value={gateway || undefined}
+                        onValueChange={(value) => handleGatewayChange(value as GatewayValue)}
+                      >
+                        <SelectTrigger className="h-12 border-white/10 bg-[#0B1421] text-white">
+                          <SelectValue placeholder="Select One" />
+                        </SelectTrigger>
+                        <SelectContent className="border-white/10 bg-[#0B1421] text-white">
+                          {gatewayOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <div>
+                                <p className="font-medium">{option.label}</p>
+                                <p className="text-xs text-white/50">{option.description}</p>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+                      <div className="rounded-lg border border-white/10 bg-[#0B1421] p-4">
+                        <p className="text-xs uppercase tracking-wide text-white/50">Plan</p>
+                        <p className="mt-2 text-lg font-semibold">{selectedPlan.name}</p>
                       </div>
+                      <div className="rounded-lg border border-white/10 bg-[#0B1421] p-4">
+                        <p className="text-xs uppercase tracking-wide text-white/50">Charge</p>
+                        <p className="mt-2 text-lg font-semibold">{charge > 0 ? formatUSD(charge) : '$0.00'}</p>
+                      </div>
+                      <div className="rounded-lg border border-white/10 bg-[#0B1421] p-4">
+                        <p className="text-xs uppercase tracking-wide text-white/50">Payable</p>
+                        <p className="mt-2 text-lg font-semibold text-yellow-400">
+                          {payable > 0 ? formatUSD(payable) : '$0.00'}
+                        </p>
+                      </div>
+                    </div>
 
-                      {/* Body */}
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex items-center gap-2 text-white/80 text-sm">
-                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                          <span>{t.hardware}: {plan.hardware}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-white/80 text-sm">
-                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                          <span>{t.contractDuration}: {plan.duration} {plan.duration === 1 ? t.day : t.days}</span>
-                        </div>
-                        {plan.totalMining && (
-                          <div className="flex items-center gap-2 text-white/80 text-sm">
-                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                            <span>
-                              {t.totalMining}: {plan.totalMining.btc?.toFixed(6)} BTC=${((plan.totalMining.btc || 0) * btcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                        )}
-                        {plan.dailyMining && (
-                          <div className="flex items-center gap-2 text-white/80 text-sm">
-                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                            <span>
-                              {t.dailyMining}: {plan.dailyMining.btc?.toFixed(6)} BTC=${((plan.dailyMining.btc || 0) * btcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                        )}
-                        {plan.monthlyMining && (
-                          <div className="flex items-center gap-2 text-white/80 text-sm">
-                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                            <span>
-                              {t.monthlyMining}: {plan.monthlyMining.btc?.toFixed(6)} BTC=${((plan.monthlyMining.btc || 0) * btcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                        )}
-                        {plan.referralRewards && (
-                          <div className="flex items-center gap-2 text-white/80 text-sm">
-                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                            <span>{t.referralRewards}: {plan.referralRewards} USDT</span>
-                          </div>
-                        )}
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting || !gateway}
+                      className="h-12 w-full bg-yellow-500 text-lg font-semibold text-black hover:bg-yellow-400 disabled:opacity-60"
+                    >
+                      {isSubmitting ? 'Preparing...' : 'Continue to payment'}
+                    </Button>
+                  </form>
+                </div>
+              )}
 
-                        {/* Progress Bar */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs text-white/60">
-                            <span>{plan.available} / {plan.sold} ({progress.toFixed(1)}%)</span>
-                          </div>
-                          <div className="relative h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                            <div
-                              className="absolute top-0 left-0 h-full bg-yellow-500 transition-all"
-                              style={{ width: `${progress}%` }}
-                            ></div>
-                          </div>
-                        </div>
+              {/* Purchase Preview */}
+              {purchaseStage === 'preview' && previewData && (
+                <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+                  <div className="rounded-xl border border-white/5 bg-[#111B2D] p-6">
+                    <button
+                      onClick={handleBackToForm}
+                      className="mb-4 flex items-center gap-2 text-sm text-white/60 hover:text-white"
+                    >
+                      <ArrowLeft className="h-4 w-4" /> Change payment method
+                    </button>
+                    <h3 className="text-xl font-semibold text-white">Plan Summary</h3>
+                    <p className="text-sm text-white/60">Confirm the details before proceeding</p>
+                    <div className="mt-6 space-y-3 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60">Plan</span>
+                        <span className="font-medium">{previewData.plan.name}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60">Gateway</span>
+                        <span className="font-medium">{`${previewData.gatewayLabel} (${previewData.network})`}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60">Amount</span>
+                        <span className="font-medium">{formatUSD(previewData.amount)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60">Charge</span>
+                        <span>{formatUSD(previewData.charge)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60">Payable</span>
+                        <span className="text-lg font-semibold text-yellow-400">{formatUSD(previewData.payable)}</span>
+                      </div>
+                    </div>
+                  </div>
 
-                        {/* Buy Now Button */}
-                        <Button
-                          onClick={() => handleBuyPlan(plan)}
-                          className="w-full bg-yellow-500 text-black hover:bg-yellow-400 font-semibold"
+                  <div className="rounded-xl border border-white/5 bg-[#111B2D] p-6">
+                    <div className="mb-4 text-sm text-white/60">Payment Preview</div>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                        <span className="text-white/60">Conversion Rate</span>
+                        <span>1 {previewData.currency} = {formatUSD(previewData.conversionRate)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60">You will send</span>
+                        <span className="text-lg font-semibold text-emerald-400">
+                          {formatCrypto(previewData.cryptoAmount)} {previewData.currency}
+                        </span>
+                      </div>
+                      <Button
+                        onClick={handleConfirmPayment}
+                        disabled={isConfirming}
+                        className="mt-4 h-12 w-full bg-yellow-500 text-black hover:bg-yellow-400 disabled:opacity-60"
+                      >
+                        {isConfirming ? 'Reserving address...' : 'Pay Now'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Purchase Payment Instructions */}
+              {purchaseStage === 'payment' && activePurchase && (
+                <div className="space-y-6">
+                  <div className="rounded-xl border border-white/5 bg-[#111B2D] p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm text-white/60">Transaction ID</p>
+                        <p className="font-mono text-lg text-yellow-400">{activePurchase.transaction_id}</p>
+                      </div>
+                      <Button variant="outline" onClick={handleStartNewPurchase}>
+                        Start new purchase
+                      </Button>
+                    </div>
+                    <div className="mt-6 rounded-xl border border-white/10 bg-[#0D1727] p-6 text-center">
+                      <p className="text-sm text-white/50">PLEASE SEND EXACTLY</p>
+                      <p className="mt-2 text-3xl font-semibold text-emerald-400">
+                        {formatCrypto(
+                          typeof activePurchase.crypto_amount === 'string'
+                            ? parseFloat(activePurchase.crypto_amount)
+                            : activePurchase.crypto_amount || 0
+                        )}{' '}
+                        {activePurchase.currency || 'BTC'}
+                      </p>
+                      <p className="text-sm text-white/50">TO</p>
+                      <div className="mt-4 flex items-center justify-center gap-2 text-sm">
+                        <span className="font-mono text-[#FF7B7B] break-all">{activePurchase.deposit_address}</span>
+                        <button
+                          onClick={() => copyToClipboard(activePurchase.deposit_address)}
+                          className="rounded-md bg-yellow-500/20 p-2 text-yellow-400 transition hover:bg-yellow-500/30 shrink-0"
                         >
-                          Buy Now
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="mt-6 flex flex-col items-center gap-4">
+                        <div>
+                          {(() => {
+                            const gateway = activePurchase.gateway as GatewayValue;
+                            const qrCodeMap: Record<GatewayValue, string> = {
+                              btc: btcQR,
+                              'usdt-trc20': trc20QR,
+                              'usdt-erc20': erc20QR,
+                              usdc: erc20QR, // USDC uses ERC20 network
+                              eth: ethQR,
+                              solana: solanaQR,
+                            };
+
+                            return (
+                              <img
+                                src={qrCodeMap[gateway] || btcQR}
+                                alt="Payment QR"
+                                className="h-48 w-48 object-contain"
+                              />
+                            );
+                          })()}
+                        </div>
+                        <p className="text-sm text-white/60">
+                          Amount: {formatUSD(activePurchase.payable)} | Network: {activePurchase.network}
+                        </p>
+                      </div>
+                      <p className="mt-4 text-xs text-white/40">
+                        Scan the QR code or copy the address. Your plan will activate once the payment is confirmed.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Our Partners Section */}
               {purchaseStage === 'form' && !selectedPlan && (
@@ -1692,7 +1899,7 @@ const StartMining = () => {
                   Your current balance: <span className="font-semibold">${userBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </p>
                 <p className="text-white/80">
-                  You need to deposit <span className="font-semibold text-yellow-400">${Math.max(requiredAmount - userBalance, 70).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> or more.
+                  You need <span className="font-semibold text-yellow-400">${Math.max(requiredAmount - userBalance, 70).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> or more.
                 </p>
                 <div className="flex flex-col gap-3 pt-4">
                   <Button
