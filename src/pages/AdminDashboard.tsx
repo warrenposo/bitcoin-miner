@@ -133,26 +133,19 @@ const AdminDashboard = () => {
       // Fetch all mining stats
       const { data: stats, error: statsError } = await supabase
         .from('mining_stats')
-        .select(`
-          *,
-          user:profiles (
-            email
-          )
-        `)
+        .select('user_id, hash_rate, total_mined, daily_earnings')
         .order('total_mined', { ascending: false });
 
       if (statsError) {
         console.error('Error fetching mining stats:', statsError);
-        // Don't show toast for RLS errors, just log and continue
-        // The 403 error is likely due to RLS policies - this is expected if admin doesn't have access
+        toast({
+          title: 'Error loading mining balances',
+          description: statsError.message || 'Please check mining_stats RLS policies.',
+          variant: 'destructive',
+        });
         setAllStats([]);
       } else if (stats) {
-        // Get user emails for stats
-        const statsWithEmails = stats.map((stat: any) => ({
-            ...stat,
-            user_email: stat.user?.email || 'Unknown',
-          }));
-        setAllStats(statsWithEmails);
+        setAllStats(stats as MiningStats[]);
       } else {
         setAllStats([]);
       }
@@ -243,6 +236,13 @@ const AdminDashboard = () => {
         .eq('user_id', userId)
         .maybeSingle();
 
+      const nextStat: MiningStats = {
+        user_id: userId,
+        hash_rate: Number(existingStat?.hash_rate ?? 0),
+        total_mined: newBalance,
+        daily_earnings: Number(existingStat?.daily_earnings ?? 0),
+      };
+
       if (existingStat) {
         const { error: updateError } = await supabase
           .from('mining_stats')
@@ -305,7 +305,15 @@ const AdminDashboard = () => {
       toast({ title: 'Balance updated', description: creditAmount > 0 ? 'Deposit log entry created for the user.' : 'User balance updated.' });
       setBalanceEditUser(null);
       setBalanceEditValue('');
-      fetchData();
+      // Optimistically update the table immediately; fetchData() will reconcile with DB next.
+      setAllStats((prev) => {
+        const idx = prev.findIndex((s) => s.user_id === userId);
+        if (idx >= 0) {
+          return prev.map((s) => (s.user_id === userId ? { ...s, ...nextStat } : s));
+        }
+        return [nextStat, ...prev];
+      });
+      await fetchData();
     } catch (err: any) {
       toast({ title: 'Error', description: err?.message || 'Failed to update balance', variant: 'destructive' });
     } finally {

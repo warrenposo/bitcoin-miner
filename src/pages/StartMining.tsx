@@ -1899,7 +1899,7 @@ const StartMining = () => {
                   Your current balance: <span className="font-semibold">${userBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </p>
                 <p className="text-white/80">
-                  You need <span className="font-semibold text-yellow-400">${Math.max(requiredAmount - userBalance, 70).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> or more.
+                  You need <span className="font-semibold text-yellow-400">${Math.max(requiredAmount - userBalance, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> or more.
                 </p>
                 <div className="flex flex-col gap-3 pt-4">
                   <Button
