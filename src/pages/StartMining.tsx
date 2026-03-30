@@ -782,9 +782,6 @@ const StartMining = () => {
   const { isSessionActive, sessionTarget, sessionStartTime, sessionId: currentSessionId, getCurrentMined, startSession: contextStartSession, SIMULATED_DAY_SECONDS } = useMining();
   const DAILY_GROWTH_RATE = 0.2; // 20%
   const [sessionMined, setSessionMined] = useState(0); // local display value, synced from context when on mining page
-  const [miningStopBalance, setMiningStopBalance] = useState<number | null>(null);
-  const [miningStopBalanceInput, setMiningStopBalanceInput] = useState('');
-  const [savingStopBalance, setSavingStopBalance] = useState(false);
 
   // Per-user mining: from profile (admin enables/disables per user)
   const miningEnabled = profile?.mining_enabled ?? true;
@@ -819,12 +816,6 @@ const StartMining = () => {
       fetchUserBalance();
     }
   }, [user]);
-
-  // Sync stop balance from profile
-  useEffect(() => {
-    const stop = profile?.mining_stop_balance;
-    setMiningStopBalance(typeof stop === 'number' ? stop : stop != null ? parseFloat(String(stop)) : null);
-  }, [profile?.mining_stop_balance]);
 
   // Fetch purchased plans from database
   useEffect(() => {
@@ -1004,15 +995,6 @@ const StartMining = () => {
       setShowStartSessionModal(true);
       return;
     }
-    const stopBalance = miningStopBalance != null && Number.isFinite(miningStopBalance) ? miningStopBalance : null;
-    if (stopBalance != null && stopBalance > 0 && userBalance >= stopBalance) {
-      toast({
-        title: 'Mining stopped',
-        description: `Your balance (${userBalance.toFixed(2)}) already reached the stop balance (${stopBalance}). Clear or raise stop balance to mine.`,
-        variant: 'destructive',
-      });
-      return;
-    }
     // Daily mined amount must not exceed account balance
     const target = Math.min(
       Math.round(userBalance * DAILY_GROWTH_RATE * 100) / 100,
@@ -1038,7 +1020,7 @@ const StartMining = () => {
         sessionTarget: target,
         sessionId,
         userId: user.id,
-        stopBalance: miningStopBalance != null && Number.isFinite(miningStopBalance) ? miningStopBalance : null,
+        stopBalance: null,
         balanceAtStart: userBalance,
       });
     } catch (e: any) {
@@ -1049,63 +1031,6 @@ const StartMining = () => {
       description: `Mining continues in background. Up to ${target.toFixed(2)} USD over ${SIMULATED_DAY_SECONDS}s (${(SIMULATED_DAY_SECONDS / 60).toFixed(0)} min). You can leave this page.`,
     });
   };
-
-  const handleSaveStopBalance = async () => {
-    if (!user) return;
-    setSavingStopBalance(true);
-    try {
-      const value = miningStopBalanceInput === '' || miningStopBalanceInput === null ? null : parseFloat(miningStopBalanceInput);
-      if (value !== null && (Number.isNaN(value) || value < 0)) {
-        toast({ title: 'Invalid value', description: 'Enter a number ≥ 0 or leave empty for no limit.', variant: 'destructive' });
-        setSavingStopBalance(false);
-        return;
-      }
-      if (value !== null && value > userBalance) {
-        toast({
-          title: 'Stop balance too high',
-          description: `Stop balance cannot be more than your current balance (${userBalance.toFixed(2)} USD).`,
-          variant: 'destructive',
-        });
-        setSavingStopBalance(false);
-        return;
-      }
-      const { error } = await supabase
-        .from('profiles')
-        .update({ mining_stop_balance: value, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id);
-      if (error) throw error;
-      setMiningStopBalance(value);
-      setMiningStopBalanceInput(value == null ? '' : String(value));
-      toast({ title: 'Saved', description: value == null ? 'Stop balance cleared (no limit).' : `Mining will stop when balance reaches ${value} USD.` });
-    } catch (e: any) {
-      toast({ title: 'Error', description: e?.message || 'Failed to save', variant: 'destructive' });
-    } finally {
-      setSavingStopBalance(false);
-    }
-  };
-
-  const handleClearStopBalance = async () => {
-    if (!user) return;
-    setSavingStopBalance(true);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ mining_stop_balance: null, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id);
-      if (error) throw error;
-      setMiningStopBalance(null);
-      setMiningStopBalanceInput('');
-      toast({ title: 'Cleared', description: 'Stop balance cleared (no limit).' });
-    } catch (e: any) {
-      toast({ title: 'Error', description: e?.message || 'Failed to clear', variant: 'destructive' });
-    } finally {
-      setSavingStopBalance(false);
-    }
-  };
-
-  useEffect(() => {
-    setMiningStopBalanceInput(miningStopBalance != null ? String(miningStopBalance) : '');
-  }, [miningStopBalance]);
 
   return (
     <div className="min-h-screen bg-[#0B1421] text-white">
@@ -1653,11 +1578,6 @@ const StartMining = () => {
           ) : activeView === 'mining' ? (
             /* Mining View */
             <div className="space-y-6">
-              {isSessionActive && (
-                <p className="text-sm text-yellow-400/90">
-                  Simulation: 1 day = {SIMULATED_DAY_SECONDS}s ({(SIMULATED_DAY_SECONDS / 60).toFixed(0)} min). MINED increases automatically; after the period, 20% is added (never more than your balance).
-                </p>
-              )}
               {/* Terminal-like Log Output */}
               <div className="bg-[#111B2D] border border-white/10 rounded-lg p-4 font-mono text-xs overflow-hidden">
                 <div className="bg-[#0F1A2B] px-3 py-2 border-b border-white/10 mb-3 rounded-t">
@@ -1712,38 +1632,6 @@ const StartMining = () => {
                 <div className="bg-[#111B2D] border border-white/10 rounded-lg p-6 text-center">
                   <div className="text-3xl font-bold text-yellow-400 mb-2">{currentShares}</div>
                   <div className="text-white/60 text-sm">SHARES</div>
-                </div>
-              </div>
-
-              {/* Stop balance (optional): mining stops when total balance reaches this */}
-              <div className="bg-[#111B2D] border border-white/10 rounded-lg p-4">
-                <label className="text-white/80 text-sm block mb-2">Stop balance (USD) – mining stops when your total balance reaches this. Cannot be more than your current balance. Leave empty for no limit.</label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    placeholder="e.g. 5000 or empty"
-                    value={miningStopBalanceInput}
-                    onChange={(e) => setMiningStopBalanceInput(e.target.value)}
-                    className="bg-[#0F1A2B] border-white/10 text-white max-w-[180px]"
-                  />
-                  <Button
-                    onClick={handleSaveStopBalance}
-                    disabled={savingStopBalance}
-                    variant="outline"
-                    className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
-                  >
-                    {savingStopBalance ? 'Saving...' : 'Save'}
-                  </Button>
-                  <Button
-                    onClick={handleClearStopBalance}
-                    disabled={savingStopBalance || miningStopBalanceInput === ''}
-                    variant="outline"
-                    className="border-white/10 text-white/80 hover:bg-white/10"
-                  >
-                    Clear
-                  </Button>
                 </div>
               </div>
 
