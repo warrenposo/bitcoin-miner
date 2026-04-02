@@ -184,6 +184,10 @@ const Dashboard = () => {
         phone: profile.mobile || '',
         countryCode: profile.country_code || prev.countryCode,
         country: profile.country || '',
+        address: profile.address || '',
+        state: profile.state || '',
+        zipCode: profile.zip_code || '',
+        city: profile.city || '',
       }));
     }
   }, [profile]);
@@ -1015,42 +1019,6 @@ const Dashboard = () => {
                       onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
                       className="bg-[#0B1421] text-white border-white/10"
                       placeholder="Country"
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label className="text-white/70">Address</Label>
-                    <Input
-                      value={profileData.address}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
-                      className="bg-[#0B1421] text-white border-white/10"
-                      placeholder="Address"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white/70">State</Label>
-                    <Input
-                      value={profileData.state}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, state: e.target.value }))}
-                      className="bg-[#0B1421] text-white border-white/10"
-                      placeholder="state"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white/70">Zip Code</Label>
-                    <Input
-                      value={profileData.zipCode}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, zipCode: e.target.value }))}
-                      className="bg-[#0B1421] text-white border-white/10"
-                      placeholder="Zip Code"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white/70">City</Label>
-                    <Input
-                      value={profileData.city}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, city: e.target.value }))}
-                      className="bg-[#0B1421] text-white border-white/10"
-                      placeholder="City"
                     />
                   </div>
                 </div>
