@@ -144,7 +144,7 @@ const FALLBACK_DIAL_CODES: DialCodeOption[] = [
 ];
 
 const Dashboard = () => {
-  const { user, profile, signOut, isAdmin } = useAuth();
+  const { user, profile, signOut, isAdmin, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [miningStats, setMiningStats] = useState<MiningStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -178,7 +178,7 @@ const Dashboard = () => {
       setProfileData(prev => ({
         ...prev,
         email: profile.email,
-        username: profile.email.split('@')[0] || '',
+        username: profile.username || profile.email.split('@')[0] || '',
         firstName: profile.full_name?.split(' ')[0] || '',
         lastName: profile.full_name?.split(' ').slice(1).join(' ') || '',
         phone: profile.mobile || '',
@@ -921,16 +921,21 @@ const Dashboard = () => {
                       const { error } = await supabase
                         .from('profiles')
                         .update({
+                          username: profileData.username,
                           full_name: fullName,
                           mobile: profileData.phone,
                           country_code: profileData.countryCode,
                           country: profileData.country,
+                          address: profileData.address,
+                          state: profileData.state,
+                          zip_code: profileData.zipCode,
+                          city: profileData.city,
                           updated_at: new Date().toISOString(),
                         })
                         .eq('user_id', user.id);
                       
                       if (error) throw error;
-                      
+                      await refreshProfile();
                       toast({
                         title: 'Success',
                         description: 'Profile updated successfully',
@@ -985,8 +990,9 @@ const Dashboard = () => {
                     <Input
                       type="email"
                       value={profileData.email}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                      className="bg-[#0B1421] text-white border-white/10"
+                      readOnly
+                      title="Email cannot be changed here"
+                      className="bg-[#0B1421]/60 text-white/70 border-white/10 cursor-not-allowed"
                       placeholder="Email"
                     />
                   </div>
@@ -1019,6 +1025,42 @@ const Dashboard = () => {
                       onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
                       className="bg-[#0B1421] text-white border-white/10"
                       placeholder="Country"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-white/70">Address</Label>
+                    <Input
+                      value={profileData.address}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="Address"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">State</Label>
+                    <Input
+                      value={profileData.state}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, state: e.target.value }))}
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="State"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">Zip Code</Label>
+                    <Input
+                      value={profileData.zipCode}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, zipCode: e.target.value }))}
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="Zip Code"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">City</Label>
+                    <Input
+                      value={profileData.city}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, city: e.target.value }))}
+                      className="bg-[#0B1421] text-white border-white/10"
+                      placeholder="City"
                     />
                   </div>
                 </div>

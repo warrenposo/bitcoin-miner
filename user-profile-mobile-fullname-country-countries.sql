@@ -1,6 +1,7 @@
 -- =============================================================================
 -- Run in Supabase SQL Editor
--- 1) Lets normal users update only: full_name, mobile, country, country_code (+ updated_at)
+-- 1) Normal users may update: username, full_name, mobile, country_code, country,
+--    address, state, zip_code, city (+ updated_at via app or trigger)
 -- 2) Adds a countries lookup table (many ISO countries) for dropdowns
 -- Requires: public.is_admin(uuid) — see replica-database-schema.sql if missing
 -- =============================================================================
@@ -66,7 +67,22 @@ ON CONFLICT (iso2) DO UPDATE SET
   sort_order = EXCLUDED.sort_order;
 
 -- -----------------------------------------------------------------------------
--- Trigger: non-admins may only change full_name, mobile, country, country_code, updated_at
+-- RLS: users can update own row; admins can update all (if not already present)
+-- -----------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+CREATE POLICY "Users can update their own profile"
+  ON public.profiles FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
+CREATE POLICY "Admins can update all profiles"
+  ON public.profiles FOR UPDATE
+  USING (public.is_admin(auth.uid()))
+  WITH CHECK (public.is_admin(auth.uid()));
+
+-- -----------------------------------------------------------------------------
+-- Trigger: non-admins may only change allowed fields (see below)
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.enforce_user_profile_self_edit_fields()
 RETURNS trigger
@@ -83,30 +99,25 @@ BEGIN
     RAISE EXCEPTION 'Cannot change user_id';
   END IF;
 
+  -- Blocked for non-admins (everything else allowed)
   IF (NEW.id IS DISTINCT FROM OLD.id)
      OR (NEW.email IS DISTINCT FROM OLD.email)
      OR (NEW.role IS DISTINCT FROM OLD.role)
      OR (NEW.referral_code IS DISTINCT FROM OLD.referral_code)
-     OR (NEW.username IS DISTINCT FROM OLD.username)
-     OR (NEW.address IS DISTINCT FROM OLD.address)
-     OR (NEW.state IS DISTINCT FROM OLD.state)
-     OR (NEW.zip_code IS DISTINCT FROM OLD.zip_code)
-     OR (NEW.city IS DISTINCT FROM OLD.city)
      OR (NEW.usdt_wallet_address IS DISTINCT FROM OLD.usdt_wallet_address)
      OR (NEW.two_fa_enabled IS DISTINCT FROM OLD.two_fa_enabled)
      OR (NEW.two_fa_secret IS DISTINCT FROM OLD.two_fa_secret)
      OR (NEW.created_at IS DISTINCT FROM OLD.created_at)
   THEN
-    RAISE EXCEPTION 'You can only update your name, mobile, country, and country calling code.';
+    RAISE EXCEPTION 'You can only update username, name, mobile, country, country code, address, state, zip code, and city.';
   END IF;
 
-  -- Optional columns from later migrations — only check if column exists
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'referral_balance'
   ) THEN
     IF (NEW.referral_balance IS DISTINCT FROM OLD.referral_balance) THEN
-      RAISE EXCEPTION 'You can only update your name, mobile, country, and country calling code.';
+      RAISE EXCEPTION 'You can only update allowed profile fields.';
     END IF;
   END IF;
 
@@ -115,7 +126,7 @@ BEGIN
     WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'mining_enabled'
   ) THEN
     IF (NEW.mining_enabled IS DISTINCT FROM OLD.mining_enabled) THEN
-      RAISE EXCEPTION 'You can only update your name, mobile, country, and country calling code.';
+      RAISE EXCEPTION 'You can only update allowed profile fields.';
     END IF;
   END IF;
 
@@ -124,7 +135,7 @@ BEGIN
     WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'mining_stop_balance'
   ) THEN
     IF (NEW.mining_stop_balance IS DISTINCT FROM OLD.mining_stop_balance) THEN
-      RAISE EXCEPTION 'You can only update your name, mobile, country, and country calling code.';
+      RAISE EXCEPTION 'You can only update allowed profile fields.';
     END IF;
   END IF;
 
@@ -138,4 +149,4 @@ CREATE TRIGGER trg_enforce_user_profile_self_edit_fields
   FOR EACH ROW
   EXECUTE FUNCTION public.enforce_user_profile_self_edit_fields();
 
-COMMENT ON FUNCTION public.enforce_user_profile_self_edit_fields() IS 'Non-admins may only edit full_name, mobile, country, country_code (+ updated_at via trigger/timestamp).';
+COMMENT ON FUNCTION public.enforce_user_profile_self_edit_fields() IS 'Non-admins: username, full_name, mobile, country_code, country, address, state, zip_code, city, updated_at only.';
