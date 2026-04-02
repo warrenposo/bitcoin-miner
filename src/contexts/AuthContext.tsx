@@ -14,6 +14,7 @@ interface Profile {
   referral_balance?: number;
   username?: string;
   mobile?: string;
+  country_code?: string;
   country?: string;
   address?: string;
   state?: string;
@@ -84,8 +85,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       );
 
       // Optimize query - only select needed fields. Include mining_enabled if column exists.
-      const selectWithMining = 'id, user_id, email, full_name, role, referral_code, referral_balance, mining_stop_balance, mining_enabled, username, mobile, country, address, state, zip_code, city, usdt_wallet_address, two_fa_enabled, created_at, updated_at';
-      const selectWithoutMining = 'id, user_id, email, full_name, role, referral_code, referral_balance, mining_stop_balance, username, mobile, country, address, state, zip_code, city, usdt_wallet_address, two_fa_enabled, created_at, updated_at';
+      const selectWithMining = 'id, user_id, email, full_name, role, referral_code, referral_balance, mining_stop_balance, mining_enabled, username, mobile, country_code, country, address, state, zip_code, city, usdt_wallet_address, two_fa_enabled, created_at, updated_at';
+      const selectWithoutMining = 'id, user_id, email, full_name, role, referral_code, referral_balance, mining_stop_balance, username, mobile, country_code, country, address, state, zip_code, city, usdt_wallet_address, two_fa_enabled, created_at, updated_at';
 
       let fetchPromise = supabase
         .from('profiles')

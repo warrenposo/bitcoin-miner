@@ -99,6 +99,49 @@ const translations = {
 };
 
 type LanguageKey = keyof typeof translations;
+type DialCodeOption = { iso2: string; name: string; dial: string };
+
+const FALLBACK_DIAL_CODES: DialCodeOption[] = [
+  { iso2: 'US', name: 'United States', dial: '+1' },
+  { iso2: 'GB', name: 'United Kingdom', dial: '+44' },
+  { iso2: 'KE', name: 'Kenya', dial: '+254' },
+  { iso2: 'NG', name: 'Nigeria', dial: '+234' },
+  { iso2: 'ZA', name: 'South Africa', dial: '+27' },
+  { iso2: 'IN', name: 'India', dial: '+91' },
+  { iso2: 'CN', name: 'China', dial: '+86' },
+  { iso2: 'AF', name: 'Afghanistan', dial: '+93' },
+  { iso2: 'AE', name: 'United Arab Emirates', dial: '+971' },
+  { iso2: 'SA', name: 'Saudi Arabia', dial: '+966' },
+  { iso2: 'EG', name: 'Egypt', dial: '+20' },
+  { iso2: 'TR', name: 'Turkey', dial: '+90' },
+  { iso2: 'PK', name: 'Pakistan', dial: '+92' },
+  { iso2: 'BD', name: 'Bangladesh', dial: '+880' },
+  { iso2: 'ID', name: 'Indonesia', dial: '+62' },
+  { iso2: 'MY', name: 'Malaysia', dial: '+60' },
+  { iso2: 'SG', name: 'Singapore', dial: '+65' },
+  { iso2: 'TH', name: 'Thailand', dial: '+66' },
+  { iso2: 'VN', name: 'Vietnam', dial: '+84' },
+  { iso2: 'PH', name: 'Philippines', dial: '+63' },
+  { iso2: 'JP', name: 'Japan', dial: '+81' },
+  { iso2: 'KR', name: 'South Korea', dial: '+82' },
+  { iso2: 'DE', name: 'Germany', dial: '+49' },
+  { iso2: 'FR', name: 'France', dial: '+33' },
+  { iso2: 'IT', name: 'Italy', dial: '+39' },
+  { iso2: 'ES', name: 'Spain', dial: '+34' },
+  { iso2: 'PT', name: 'Portugal', dial: '+351' },
+  { iso2: 'NL', name: 'Netherlands', dial: '+31' },
+  { iso2: 'SE', name: 'Sweden', dial: '+46' },
+  { iso2: 'NO', name: 'Norway', dial: '+47' },
+  { iso2: 'DK', name: 'Denmark', dial: '+45' },
+  { iso2: 'FI', name: 'Finland', dial: '+358' },
+  { iso2: 'CH', name: 'Switzerland', dial: '+41' },
+  { iso2: 'AU', name: 'Australia', dial: '+61' },
+  { iso2: 'NZ', name: 'New Zealand', dial: '+64' },
+  { iso2: 'CA', name: 'Canada', dial: '+1' },
+  { iso2: 'BR', name: 'Brazil', dial: '+55' },
+  { iso2: 'AR', name: 'Argentina', dial: '+54' },
+  { iso2: 'MX', name: 'Mexico', dial: '+52' },
+];
 
 const Dashboard = () => {
   const { user, profile, signOut, isAdmin } = useAuth();
@@ -138,6 +181,9 @@ const Dashboard = () => {
         username: profile.email.split('@')[0] || '',
         firstName: profile.full_name?.split(' ')[0] || '',
         lastName: profile.full_name?.split(' ').slice(1).join(' ') || '',
+        phone: profile.mobile || '',
+        countryCode: profile.country_code || prev.countryCode,
+        country: profile.country || '',
       }));
     }
   }, [profile]);
@@ -163,6 +209,7 @@ const Dashboard = () => {
     zipCode: '',
     city: '',
   });
+  const [dialCodeOptions, setDialCodeOptions] = useState<DialCodeOption[]>(FALLBACK_DIAL_CODES);
   const [otp, setOtp] = useState('');
   const [setupKey, setSetupKey] = useState('5KYBUO47PRDIP5NF');
   const [passwordData, setPasswordData] = useState({
@@ -177,6 +224,32 @@ const Dashboard = () => {
   const [submittingTicket, setSubmittingTicket] = useState(false);
 
   const copy = translations[language];
+
+  useEffect(() => {
+    const fetchDialCodes = async () => {
+      const { data, error } = await supabase
+        .from('countries')
+        .select('iso2, name_en, dial_code, sort_order')
+        .not('dial_code', 'is', null)
+        .order('sort_order', { ascending: true })
+        .order('name_en', { ascending: true });
+
+      if (error || !data?.length) return;
+
+      const options = data
+        .filter((row: any) => !!row.dial_code)
+        .map((row: any) => ({
+          iso2: String(row.iso2 || '').toUpperCase(),
+          name: String(row.name_en || row.iso2 || ''),
+          dial: String(row.dial_code),
+        }))
+        .filter((row: DialCodeOption) => row.iso2 && row.name && row.dial);
+
+      if (options.length > 0) setDialCodeOptions(options);
+    };
+
+    fetchDialCodes();
+  }, []);
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -845,15 +918,10 @@ const Dashboard = () => {
                         .from('profiles')
                         .update({
                           full_name: fullName,
-                          email: profileData.email,
-                          username: profileData.username,
-                            mobile: profileData.phone,
+                          mobile: profileData.phone,
                           country_code: profileData.countryCode,
                           country: profileData.country,
-                          address: profileData.address,
-                          state: profileData.state,
-                          zip_code: profileData.zipCode,
-                          city: profileData.city,
+                          updated_at: new Date().toISOString(),
                         })
                         .eq('user_id', user.id);
                       
@@ -926,14 +994,11 @@ const Dashboard = () => {
                         onChange={(e) => setProfileData(prev => ({ ...prev, countryCode: e.target.value }))}
                         className="bg-yellow-500 text-black px-3 py-2 rounded border-white/10"
                       >
-                        <option value="+1">+1 (US)</option>
-                        <option value="+44">+44 (UK)</option>
-                        <option value="+254">+254 (KE)</option>
-                        <option value="+93">+93 (AF)</option>
-                        <option value="+234">+234 (NG)</option>
-                        <option value="+27">+27 (ZA)</option>
-                        <option value="+91">+91 (IN)</option>
-                        <option value="+86">+86 (CN)</option>
+                        {dialCodeOptions.map((opt) => (
+                          <option key={`${opt.iso2}-${opt.dial}`} value={opt.dial}>
+                            {opt.dial} ({opt.iso2})
+                          </option>
+                        ))}
                       </select>
                       <Input
                         value={profileData.phone}
